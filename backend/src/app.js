@@ -1,5 +1,6 @@
 import solicitacoesRouter from "./routers/solicitacoes.router.js";
-import usuariosRouter from "./routers/usuarios.router.js"
+import usuariosRouter from "./routers/usuarios.router.js";
+import dashboardRouter from "./routers/dashboard.router.js";
 import { manipuladorDeErros } from './middlewares/error.middleware.js';
 import express from 'express';
 import cors from 'cors'; 
@@ -10,6 +11,7 @@ app.use(express.json());
 
 app.use("/usuarios", usuariosRouter);
 app.use("/solicitacoes", solicitacoesRouter);
+app.use("/dashboard", dashboardRouter);
 app.use(manipuladorDeErros);
 
 const PORTA = 3000;

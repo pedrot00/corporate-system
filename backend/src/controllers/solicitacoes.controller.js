@@ -3,12 +3,13 @@ import SolicitacoesService from '../services/solicitacoes.service.js';
 const solicitacaoService = new SolicitacoesService();
 class SolicitacoesController{
 
-    criar(req, res){
+  criar(req, res){
         try{
             const dadosSolicitacao = {
                 ...req.body,
-                usuario: req.usuarioLogado.nome
+                usuarioSolicitante: req.body.usuarioSolicitante || "Admin Temporário" 
             };
+            
             const novaSolicitacao = solicitacaoService.criarSolicitacao(dadosSolicitacao);
             return res.status(201).json(novaSolicitacao);
         } 
