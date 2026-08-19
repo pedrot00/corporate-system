@@ -1,30 +1,28 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
-// Importação dos nossos componentes
+// Importação dos componentes de páginas
 import Layout from './pages/Layout';
 import Solicitacoes from './pages/Solicitacoes';
+import Dashboard from './pages/Dashboard';
 
 export default function App() {
   return (
     <Router>
-      {/* O Layout envolve todas as rotas. Assim, o menu lateral e o header não recarregam */}
+      {/* O Layout envolve todas as rotas ativas */}
       <Layout>
         <Routes>
-          {/* Redireciona a raiz (/) automaticamente para a tela de solicitações */}
-          <Route path="/" element={<Navigate to="/solicitacoes" replace />} />
+          {/* Redireciona a raiz (/) para o Dashboard */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           
-          {/* Nossa tela principal já desenvolvida */}
+          {/* Rotas ativas da aplicação */}
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/solicitacoes" element={<Solicitacoes />} />
           
-          {/* Rotas de placeholder para o futuro */}
-          <Route 
-            path="/dashboard" 
-            element={<div className="text-slate-500">Página de Dashboard (Em construção)</div>} 
-          />
+          {/* Placeholder para futuras páginas */}
           <Route 
             path="/relatorios" 
-            element={<div className="text-slate-500">Página de Relatórios (Em construção)</div>} 
+            element={<div className="p-8 text-slate-500">Página de Relatórios (Em construção)</div>} 
           />
         </Routes>
       </Layout>
