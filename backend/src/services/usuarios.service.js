@@ -1,96 +1,165 @@
-import usuarios from "../models/usuariosModel.js";
+import prisma from '../config/prisma.js';
+import bcrypt from 'bcrypt';
 
 class UsuariosService {
 
-    criarUsuario(dados){
-        if (!dados.nome || !dados.departamento || !dados.perfil){
-            throw new Error("Preencha adequadamente todos os campos obrigatórios.");
-        }
-        const novoUsuario = {
-            id: usuarios.length + 1,
-            nome: dados.nome,
-            departamento: dados.departamento,
-            perfil: dados.perfil
-        };
-        try {
-            usuarios.push(novoUsuario);
-
-            return novoUsuario;
-        } catch (error) {
-            throw new Error("Não foi possível cadastrar o novo usuário.");
-        }
-    }
-    
-    listarUsuarios(dados){
-        return usuarios;
+  async criarUsuario(dados) {
+    if (!dados.nome || !dados.email || !dados.senha || !dados.departamento || !dados.perfil) {
+      throw new Error("Preencha adequadamente todos os campos obrigatórios.");
     }
 
-    listarPorId(reqId){
-        const idNumerico = Number(reqId);
-        const usuarioEncontrado = usuarios.find((usuario => usuario.id === idNumerico))
-
-        if(!usuarioEncontrado){
-            throw new Error("Usuário não encontrado");
-        }
-        return usuarioEncontrado;
+    const perfisPermitidos = ['FUNCIONARIO', 'GESTOR', 'COMPRAS', 'ADMIN'];
+    if (!perfisPermitidos.includes(dados.perfil)) {
+      throw new Error("Perfil inválido.");
     }
 
-    atualizar(reqId, dados){
-        const idNumber = Number(reqId);
-        const usuarioEncontrado = usuarios.find(usuario => usuario.id === idNumber);
+    const usuarioExistente = await prisma.usuario.findUnique({
+      where: { email: dados.email }
+    });
 
-        if(!usuarioEncontrado){
-            throw new Error("Usuário não encontrado para atualização");
-        }
-        if (!dados.nome || !dados.departamento || !dados.perfil){
-            throw new Error("Preencha adequadamente todos os campos obrigatórios.");
-        }
-
-        usuarioEncontrado.nome = dados.nome;
-        usuarioEncontrado.departamento = dados.departamento;
-        usuarioEncontrado.perfil = dados.perfil;
-
-        //n precisamos dar push no banco pois o usuario ja esta la
-        return usuarioEncontrado;
+    if (usuarioExistente) {
+      throw new Error("E-mail já cadastrado no sistema.");
     }
 
-    alterar(reqId, dados){
-         const idNumber = Number(reqId);
-         const usuarioEncontrado = usuarios.find(usuario => usuario.id === idNumber);
+    const senhaHash = await bcrypt.hash(dados.senha, 10);
 
-        if(!usuarioEncontrado){
-            throw new Error("Usuário não encontrado para atualização");
-        }
-        if (!dados.nome && !dados.departamento && !dados.perfil){
-            throw new Error("Preencha adequadamente o campo a ser modificado.");
-        }
+    return await prisma.usuario.create({
+      data: {
+        nome: dados.nome,
+        email: dados.email,
+        senha: senhaHash,
+        departamento: dados.departamento,
+        perfil: dados.perfil
+      },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        departamento: true,
+        perfil: true,
+        criadoEm: true
+      }
+    });
+  }
 
-        if(dados.nome !== undefined){
-            usuarioEncontrado.nome = dados.nome;
-        }
-        if(dados.departamento !== undefined){
-            usuarioEncontrado.departamento = dados.departamento;
-        }
-         if(dados.perfil !== undefined){
-            const perfisPermitidos = ['FUNCIONARIO', 'GESTOR', 'COMPRAS', 'ADMIN'];
-            if (!perfisPermitidos.includes(dados.perfil)) {
-                throw new Error("Perfil inválido.");
-            }
-            usuarioEncontrado.perfil = dados.perfil
-        }
-        return usuarioEncontrado;
+  async listarUsuarios() {
+    return await prisma.usuario.findMany({
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        departamento: true,
+        perfil: true,
+        criadoEm: true
+      }
+    });
+  }
+
+  async listarPorId(reqId) {
+    const idNumerico = Number(reqId);
+    const usuarioEncontrado = await prisma.usuario.findUnique({
+      where: { id: idNumerico },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        departamento: true,
+        perfil: true,
+        criadoEm: true
+      }
+    });
+
+    if (!usuarioEncontrado) {
+      throw new Error("Usuário não encontrado.");
     }
 
-    deletar(reqId){
-        const idNumber = Number(reqId);
-        const index = usuarios.findIndex(usuario => usuario.id === idNumber);
-        
-        if(index == -1){
-            throw new Error('Usuário não encontrado para deleção.');
-        }
+    return usuarioEncontrado;
+  }
 
-        usuarios.splice(index,1);
+  async atualizar(reqId, dados) {
+    const idNumber = Number(reqId);
+    await this.listarPorId(idNumber);
+
+    if (!dados.nome || !dados.email || !dados.departamento || !dados.perfil) {
+      throw new Error("Preencha adequadamente todos os campos obrigatórios.");
     }
+
+    const perfisPermitidos = ['FUNCIONARIO', 'GESTOR', 'COMPRAS', 'ADMIN'];
+    if (!perfisPermitidos.includes(dados.perfil)) {
+      throw new Error("Perfil inválido.");
+    }
+
+    const dadosAtualizacao = {
+      nome: dados.nome,
+      email: dados.email,
+      departamento: dados.departamento,
+      perfil: dados.perfil
+    };
+
+    if (dados.senha) {
+      dadosAtualizacao.senha = await bcrypt.hash(dados.senha, 10);
+    }
+
+    return await prisma.usuario.update({
+      where: { id: idNumber },
+      data: dadosAtualizacao,
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        departamento: true,
+        perfil: true
+      }
+    });
+  }
+
+  async alterar(reqId, dados) {
+    const idNumber = Number(reqId);
+    await this.listarPorId(idNumber);
+
+    if (!dados.nome && !dados.email && !dados.departamento && !dados.perfil && !dados.senha) {
+      throw new Error("Preencha adequadamente o campo a ser modificado.");
+    }
+
+    const dadosAtualizacao = {};
+
+    if (dados.nome !== undefined) dadosAtualizacao.nome = dados.nome;
+    if (dados.email !== undefined) dadosAtualizacao.email = dados.email;
+    if (dados.departamento !== undefined) dadosAtualizacao.departamento = dados.departamento;
+
+    if (dados.perfil !== undefined) {
+      const perfisPermitidos = ['FUNCIONARIO', 'GESTOR', 'COMPRAS', 'ADMIN'];
+      if (!perfisPermitidos.includes(dados.perfil)) {
+        throw new Error("Perfil inválido.");
+      }
+      dadosAtualizacao.perfil = dados.perfil;
+    }
+
+    if (dados.senha !== undefined) {
+      dadosAtualizacao.senha = await bcrypt.hash(dados.senha, 10);
+    }
+
+    return await prisma.usuario.update({
+      where: { id: idNumber },
+      data: dadosAtualizacao,
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        departamento: true,
+        perfil: true
+      }
+    });
+  }
+
+  async deletar(reqId) {
+    const idNumber = Number(reqId);
+    await this.listarPorId(idNumber);
+
+    return await prisma.usuario.delete({
+      where: { id: idNumber }
+    });
+  }
 }
 
 export default UsuariosService;
