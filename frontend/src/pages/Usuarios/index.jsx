@@ -1,40 +1,73 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserPlus, Search, Shield, Trash2 } from 'lucide-react';
-
-const MOCK_INICIAL_USUARIOS = [
-  { id: 1, nome: 'Ana Costa', email: 'ana.costa@empresa.com', papel: 'FUNCIONARIO', depto: 'TI' },
-  { id: 2, nome: 'Carlos Souza', email: 'carlos.gestor@empresa.com', papel: 'GESTOR', depto: 'TI' },
-  { id: 3, nome: 'Admin Pedro', email: 'admin@empresa.com', papel: 'ADMIN', depto: 'Diretoria' },
-  { id: 4, nome: 'Mariana Silva', email: 'mariana.silva@empresa.com', papel: 'FUNCIONARIO', depto: 'Financeiro' },
-];
+import { api } from '../../services/api'; // Import da conexão com o backend
 
 export default function Usuarios() {
-  const [usuarios, setUsuarios] = useState(MOCK_INICIAL_USUARIOS);
+  const [usuarios, setUsuarios] = useState([]);
   const [busca, setBusca] = useState('');
+  const [loading, setLoading] = useState(true);
+  
+  // Modal e form states
   const [modalAberto, setModalAberto] = useState(false);
   const [novoUsuario, setNovoUsuario] = useState({
     nome: '',
     email: '',
-    depto: 'TI',
-    papel: 'FUNCIONARIO'
+    senha: '', // Necessário para o banco real
+    departamento: 'TI', // Atualizado de 'depto'
+    perfil: 'FUNCIONARIO' // Atualizado de 'papel'
   });
 
-  const excluirUsuario = (id) => {
-    setUsuarios(prev => prev.filter(user => user.id !== id));
+  // 1. Buscar os usuários do Banco de Dados
+  const carregarUsuarios = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/usuarios');
+      setUsuarios(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar usuários:', error);
+      // Se a rota ainda não existir, evita que a tela quebre
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleCriarUsuario = (e) => {
+  useEffect(() => {
+    carregarUsuarios();
+  }, []);
+
+  // 2. Excluir usuário no Banco de Dados
+  const excluirUsuario = async (id) => {
+    if (!window.confirm("Tem certeza que deseja excluir este usuário?")) return;
+    
+    try {
+      await api.delete(`/usuarios/${id}`);
+      setUsuarios(prev => prev.filter(user => user.id !== id));
+    } catch (error) {
+      console.error('Erro ao excluir usuário:', error);
+      alert('Não foi possível excluir o usuário. Verifique se ele possui solicitações atreladas.');
+    }
+  };
+
+  // 3. Criar usuário no Banco de Dados
+  const handleCriarUsuario = async (e) => {
     e.preventDefault();
-    const novoid = usuarios.length + 1;
-    setUsuarios([...usuarios, { ...novoUsuario, id: novoid }]);
-    setModalAberto(false);
-    setNovoUsuario({ nome: '', email: '', depto: 'TI', papel: 'FUNCIONARIO' });
+    try {
+      await api.post('/usuarios', novoUsuario);
+      
+      setModalAberto(false);
+      setNovoUsuario({ nome: '', email: '', senha: '', departamento: 'TI', perfil: 'FUNCIONARIO' });
+      carregarUsuarios(); // Recarrega a lista para pegar o ID real gerado pelo banco
+    } catch (error) {
+      console.error('Erro ao criar usuário:', error);
+      alert('Erro ao criar usuário. Verifique se o e-mail já está em uso.');
+    }
   };
 
+  // Atualizado para usar u.departamento
   const usuariosFiltrados = usuarios.filter(u => 
     u.nome.toLowerCase().includes(busca.toLowerCase()) || 
     u.email.toLowerCase().includes(busca.toLowerCase()) ||
-    u.depto.toLowerCase().includes(busca.toLowerCase())
+    u.departamento?.toLowerCase().includes(busca.toLowerCase())
   );
 
   return (
@@ -71,48 +104,60 @@ export default function Usuarios() {
 
       {/* TABELA DE USUÁRIOS */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full text-left text-sm text-slate-600">
-          <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-500 border-b border-slate-200">
-            <tr>
-              <th className="p-4">Usuário</th>
-              <th className="p-4">Departamento</th>
-              <th className="p-4">Perfil de Acesso</th>
-              <th className="p-4 text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {usuariosFiltrados.map((u) => (
-              <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="p-4">
-                  <div className="font-semibold text-slate-800">{u.nome}</div>
-                  <div className="text-xs text-slate-400">{u.email}</div>
-                </td>
-                <td className="p-4 text-slate-600 font-medium">{u.depto}</td>
-                <td className="p-4">
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold ${
-                    u.papel === 'ADMIN' 
-                      ? 'bg-purple-50 text-purple-700 border border-purple-200' 
-                      : u.papel === 'GESTOR' 
-                      ? 'bg-blue-50 text-blue-700 border border-blue-200' 
-                      : 'bg-slate-100 text-slate-700 border border-slate-200'
-                  }`}>
-                    <Shield size={12} />
-                    {u.papel}
-                  </span>
-                </td>
-                <td className="p-4 text-right">
-                  <button
-                    onClick={() => excluirUsuario(u.id)}
-                    title="Excluir Usuário"
-                    className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-colors"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </td>
+        {loading ? (
+          <div className="p-8 text-center text-slate-500">Carregando usuários...</div>
+        ) : (
+          <table className="w-full text-left text-sm text-slate-600">
+            <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-500 border-b border-slate-200">
+              <tr>
+                <th className="p-4">Usuário</th>
+                <th className="p-4">Departamento</th>
+                <th className="p-4">Perfil de Acesso</th>
+                <th className="p-4 text-right">Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {usuariosFiltrados.length === 0 ? (
+                <tr>
+                  <td colSpan="4" className="p-4 text-center text-slate-500">
+                    Nenhum usuário encontrado.
+                  </td>
+                </tr>
+              ) : (
+                usuariosFiltrados.map((u) => (
+                  <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="p-4">
+                      <div className="font-semibold text-slate-800">{u.nome}</div>
+                      <div className="text-xs text-slate-400">{u.email}</div>
+                    </td>
+                    <td className="p-4 text-slate-600 font-medium">{u.departamento}</td>
+                    <td className="p-4">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold ${
+                        u.perfil === 'ADMIN' 
+                          ? 'bg-purple-50 text-purple-700 border border-purple-200' 
+                          : u.perfil === 'GESTOR' 
+                          ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                          : 'bg-slate-100 text-slate-700 border border-slate-200'
+                      }`}>
+                        <Shield size={12} />
+                        {u.perfil}
+                      </span>
+                    </td>
+                    <td className="p-4 text-right">
+                      <button
+                        onClick={() => excluirUsuario(u.id)}
+                        title="Excluir Usuário"
+                        className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-colors"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* MODAL DE CADASTRO */}
@@ -146,12 +191,24 @@ export default function Usuarios() {
                 />
               </div>
 
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Senha de Acesso</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Defina uma senha"
+                  value={novoUsuario.senha}
+                  onChange={(e) => setNovoUsuario({ ...novoUsuario, senha: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1">Departamento</label>
                   <select
-                    value={novoUsuario.depto}
-                    onChange={(e) => setNovoUsuario({ ...novoUsuario, depto: e.target.value })}
+                    value={novoUsuario.departamento}
+                    onChange={(e) => setNovoUsuario({ ...novoUsuario, departamento: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
                     <option value="TI">TI</option>
@@ -165,8 +222,8 @@ export default function Usuarios() {
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1">Perfil de Acesso</label>
                   <select
-                    value={novoUsuario.papel}
-                    onChange={(e) => setNovoUsuario({ ...novoUsuario, papel: e.target.value })}
+                    value={novoUsuario.perfil}
+                    onChange={(e) => setNovoUsuario({ ...novoUsuario, perfil: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
                     <option value="FUNCIONARIO">Funcionário</option>
@@ -195,7 +252,6 @@ export default function Usuarios() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

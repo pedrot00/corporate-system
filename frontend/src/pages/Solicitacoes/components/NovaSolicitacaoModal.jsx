@@ -5,7 +5,7 @@ export default function NovaSolicitacaoModal({ aberto, onClose, onCriar, usuario
     titulo: '',
     descricao: '',
     categoria: 'Equipamentos de TI',
-    departamento: usuario?.depto || 'TI',
+    departamento: usuario?.departamento || 'TI', // Modificado para .departamento
     prioridade: 'MEDIA',
     valorEstimado: '',
   });
@@ -16,16 +16,15 @@ export default function NovaSolicitacaoModal({ aberto, onClose, onCriar, usuario
     e.preventDefault();
     onCriar({
       ...formData,
-      valorEstimado: formData.valorEstimado.startsWith('R$') 
-        ? formData.valorEstimado 
-        : `R$ ${formData.valorEstimado}`,
-      usuarioSolicitante: usuario?.nome || 'Usuário do Sistema',
+      valorEstimado: Number(formData.valorEstimado) // Envia como Número
     });
+    
+    // Reseta o formulário
     setFormData({
       titulo: '',
       descricao: '',
       categoria: 'Equipamentos de TI',
-      departamento: usuario?.depto || 'TI',
+      departamento: usuario?.departamento || 'TI',
       prioridade: 'MEDIA',
       valorEstimado: '',
     });
@@ -105,11 +104,12 @@ export default function NovaSolicitacaoModal({ aberto, onClose, onCriar, usuario
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">Valor Estimado *</label>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Valor Estimado numérico (R$) *</label>
               <input
-                type="text"
+                type="number"
+                step="0.01"
                 required
-                placeholder="Ex: 2.500,00"
+                placeholder="Ex: 2500.00"
                 value={formData.valorEstimado}
                 onChange={(e) => setFormData({ ...formData, valorEstimado: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -118,17 +118,10 @@ export default function NovaSolicitacaoModal({ aberto, onClose, onCriar, usuario
           </div>
 
           <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-            >
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
               Cancelar
             </button>
-            <button
-              type="submit"
-              className="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm"
-            >
+            <button type="submit" className="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm">
               Criar Solicitação
             </button>
           </div>

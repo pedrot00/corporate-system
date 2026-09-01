@@ -1,36 +1,46 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Lock, Mail, ArrowRight, UserCheck } from 'lucide-react';
+import { Lock, Mail, ArrowRight, UserCheck, AlertCircle } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const { loginPorPerfil } = useAuth();
+  const [erro, setErro] = useState('');
+  const [carregando, setCarregando] = useState(false);
+  
+  const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLoginSubmit = (e) => {
-    e.preventDefault();
-    // No futuro, fará o POST /api/login. Por enquanto, valida credenciais mockadas.
-    if (email.includes('admin')) handleEntrar('ADMIN');
-    else if (email.includes('gestor') || email.includes('carlos')) handleEntrar('GESTOR');
-    else handleEntrar('FUNCIONARIO');
+  const realizarLogin = async (emailLogin, senhaLogin) => {
+    setErro('');
+    setCarregando(true);
+    
+    try {
+      const usuarioLogado = await login(emailLogin, senhaLogin);
+      
+      // Redirecionamento condicional por perfil de acesso
+      if (usuarioLogado?.perfil === 'FUNCIONARIO') {
+        navigate('/minhas-solicitacoes');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      setErro('E-mail ou senha incorretos. Verifique suas credenciais.');
+    } finally {
+      setCarregando(false);
+    }
   };
 
-  const handleEntrar = (papel) => {
-    loginPorPerfil(papel);
-    if (papel === 'FUNCIONARIO') {
-      navigate('/minhas-solicitacoes');
-    } else {
-      navigate('/dashboard');
-    }
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    await realizarLogin(email, senha);
   };
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-md rounded-2xl shadow-xl p-8 space-y-6">
         
-        {/* CABEÇALHO DA TELA DE LOGIN */}
         <div className="text-center space-y-2">
           <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center font-bold text-white text-xl mx-auto shadow-lg shadow-indigo-200">
             C
@@ -39,7 +49,13 @@ export default function Login() {
           <p className="text-sm text-slate-500">Entre com suas credenciais para continuar</p>
         </div>
 
-        {/* FORMULÁRIO */}
+        {erro && (
+          <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm flex items-center gap-2">
+            <AlertCircle size={16} />
+            {erro}
+          </div>
+        )}
+
         <form onSubmit={handleLoginSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">E-mail</label>
@@ -73,33 +89,36 @@ export default function Login() {
 
           <button
             type="submit"
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 shadow-md shadow-indigo-100"
+            disabled={carregando}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 shadow-md shadow-indigo-100"
           >
-            Entrar no Sistema
-            <ArrowRight size={16} />
+            {carregando ? 'Entrando...' : 'Entrar no Sistema'}
+            {!carregando && <ArrowRight size={16} />}
           </button>
         </form>
 
-        {/* SELETOR RÁPIDO PARA TESTES */}
         <div className="pt-4 border-t border-slate-100 space-y-2">
           <p className="text-xs font-medium text-slate-400 text-center flex items-center justify-center gap-1">
-            <UserCheck size={14} /> Atantes para teste de desenvolvimento:
+            <UserCheck size={14} /> Atalhos para teste do portfólio:
           </p>
           <div className="grid grid-cols-3 gap-2">
             <button
-              onClick={() => handleEntrar('FUNCIONARIO')}
+              type="button"
+              onClick={() => realizarLogin('joao@empresa.com', '123456')}
               className="px-2 py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 rounded text-xs font-medium transition-colors"
             >
               Funcionário
             </button>
             <button
-              onClick={() => handleEntrar('GESTOR')}
+              type="button"
+              onClick={() => realizarLogin('gestor@empresa.com', '123456')}
               className="px-2 py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 rounded text-xs font-medium transition-colors"
             >
               Gestor
             </button>
             <button
-              onClick={() => handleEntrar('ADMIN')}
+              type="button"
+              onClick={() => realizarLogin('admin@empresa.com', '123456')}
               className="px-2 py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 rounded text-xs font-medium transition-colors"
             >
               Admin

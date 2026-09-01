@@ -1,108 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, Eye, CheckCircle, Clock, XCircle, ShoppingCart, CheckCheck } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { api } from '../../services/api';
 import NovaSolicitacaoModal from './components/NovaSolicitacaoModal';
 import DetalhesModal from './components/DetalhesModal';
 
-const MOCK_SOLICITACOES = [
-  {
-    id: 1,
-    titulo: 'Notebook Dell XPS 15',
-    descricao: 'Desenvolvimento de software de alta performance e compilação rápida.',
-    valorEstimado: 'R$ 12.500,00',
-    categoria: 'Equipamentos de TI',
-    departamento: 'TI',
-    prioridade: 'ALTA',
-    estado: 'PENDENTE',
-    usuarioSolicitante: 'Ana Costa',
-    dataCriacao: new Date('2026-08-18'),
-    historico: [
-      { id: 1, dataHora: new Date('2026-08-18'), usuario: 'Ana Costa', estadoAnterior: null, novoEstado: 'PENDENTE', observacao: 'Solicitação criada no sistema.' }
-    ]
-  },
-  {
-    id: 2,
-    titulo: 'Licença Figma Organization',
-    descricao: 'Plano anual para o time de produto e design.',
-    valorEstimado: 'R$ 2.400,00',
-    categoria: 'Licenças de Software',
-    departamento: 'TI',
-    prioridade: 'MEDIA',
-    estado: 'APROVADA',
-    usuarioSolicitante: 'Carlos Souza',
-    dataCriacao: new Date('2026-08-15'),
-    historico: [
-      { id: 1, dataHora: new Date('2026-08-15'), usuario: 'Carlos Souza', estadoAnterior: null, novoEstado: 'PENDENTE', observacao: 'Solicitação criada no sistema.' },
-      { id: 2, dataHora: new Date('2026-08-16'), usuario: 'Admin Pedro', estadoAnterior: 'PENDENTE', novoEstado: 'APROVADA', observacao: 'Aprovado para renovação.' }
-    ]
-  }
-];
-
 export default function Solicitacoes({ apenasMinhas = false }) {
   const { usuario } = useAuth();
-  const [solicitacoes, setSolicitacoes] = useState(MOCK_SOLICITACOES);
+  const [solicitacoes, setSolicitacoes] = useState([]);
   const [busca, setBusca] = useState('');
   const [estadoFiltro, setEstadoFiltro] = useState('TODOS');
-
   const [modalNovaAberto, setModalNovaAberto] = useState(false);
   const [itemDetalhes, setItemDetalhes] = useState(null);
 
+  // BUSCA OS DADOS DA API
+  const carregarSolicitacoes = async () => {
+    try {
+      const response = await api.get('/solicitacoes');
+      setSolicitacoes(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar solicitações:', error);
+    }
+  };
+
+  useEffect(() => {
+    carregarSolicitacoes();
+  }, []);
+
   const chamadosPorVisao = apenasMinhas 
-    ? solicitacoes.filter(s => s.usuarioSolicitante === usuario?.nome)
+    ? solicitacoes.filter(s => s.solicitanteId === usuario?.id)
     : solicitacoes;
 
   const chamadosFiltrados = chamadosPorVisao.filter(item => {
+    const nomeSolicitante = item.solicitante?.nome || '';
     const atendeBusca = item.titulo.toLowerCase().includes(busca.toLowerCase()) ||
-                        item.usuarioSolicitante.toLowerCase().includes(busca.toLowerCase()) ||
+                        nomeSolicitante.toLowerCase().includes(busca.toLowerCase()) ||
                         item.departamento.toLowerCase().includes(busca.toLowerCase());
     const atendeEstado = estadoFiltro === 'TODOS' || item.estado === estadoFiltro;
     return atendeBusca && atendeEstado;
   });
 
-  const handleTransicionarEstado = (id, novoEstado, observacao = '') => {
-    setSolicitacoes(prev => prev.map(s => {
-      if (s.id !== id) return s;
-
-      const estadoAnterior = s.estado;
-      const novoHistorico = [
-        ...s.historico,
-        {
-          id: s.historico.length + 1,
-          dataHora: new Date(),
-          usuario: usuario?.nome || 'Usuário do Sistema',
-          estadoAnterior,
-          novoEstado,
-          observacao: observacao || `Status alterado para ${novoEstado}`
-        }
-      ];
-
-      return {
-        ...s,
-        estado: novoEstado,
-        historico: novoHistorico
-      };
-    }));
+  const handleTransicionarEstado = async (id, novoEstado, observacao = '') => {
+    try {
+      await api.put(`/solicitacoes/${id}`, { estado: novoEstado, observacao });
+      carregarSolicitacoes(); // Recarrega a lista após atualizar
+    } catch (error) {
+      alert(error.response?.data?.error || 'Erro ao atualizar estado.');
+    }
   };
 
-  const handleCriarSolicitacao = (dadosNovos) => {
-    const dataAtual = new Date();
-    const novaSolicitacao = {
-      id: solicitacoes.length + 1,
-      ...dadosNovos,
-      estado: 'PENDENTE',
-      dataCriacao: dataAtual,
-      historico: [
-        {
-          id: 1,
-          dataHora: dataAtual,
-          usuario: dadosNovos.usuarioSolicitante,
-          estadoAnterior: null,
-          novoEstado: 'PENDENTE',
-          observacao: 'Solicitação criada no sistema.'
-        }
-      ]
-    };
-    setSolicitacoes([novaSolicitacao, ...solicitacoes]);
+  const handleCriarSolicitacao = async (dadosNovos) => {
+    try {
+      await api.post('/solicitacoes', dadosNovos);
+      carregarSolicitacoes(); // Recarrega a lista após criar
+    } catch (error) {
+      alert(error.response?.data?.error || 'Erro ao criar solicitação.');
+    }
+  };
+
+  const abrirDetalhes = async (id) => {
+    try {
+      // Busca a solicitação com o histórico completo aninhado
+      const response = await api.get(`/solicitacoes/${id}`);
+      setItemDetalhes(response.data);
+    } catch (error) {
+      alert('Erro ao carregar detalhes.');
+    }
   };
 
   return (
@@ -185,10 +148,12 @@ export default function Solicitacoes({ apenasMinhas = false }) {
                   <div className="text-xs text-slate-400">{item.categoria}</div>
                 </td>
                 <td className="p-4">
-                  <div className="font-medium text-slate-700">{item.usuarioSolicitante}</div>
+                  <div className="font-medium text-slate-700">{item.solicitante?.nome || 'Desconhecido'}</div>
                   <div className="text-xs text-slate-400">{item.departamento}</div>
                 </td>
-                <td className="p-4 font-bold text-slate-800">{item.valorEstimado}</td>
+                <td className="p-4 font-bold text-slate-800">
+                  R$ {Number(item.valorEstimado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </td>
                 <td className="p-4">
                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
                     item.estado === 'APROVADA' ? 'bg-emerald-100 text-emerald-800' :
@@ -206,7 +171,7 @@ export default function Solicitacoes({ apenasMinhas = false }) {
                 </td>
                 <td className="p-4 text-right">
                   <button
-                    onClick={() => setItemDetalhes(item)}
+                    onClick={() => abrirDetalhes(item.id)}
                     className="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors inline-flex items-center gap-1"
                   >
                     <Eye size={14} /> Detalhes
@@ -234,4 +199,4 @@ export default function Solicitacoes({ apenasMinhas = false }) {
       />
     </div>
   );
-} 
+}

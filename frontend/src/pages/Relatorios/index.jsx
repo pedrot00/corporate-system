@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Download, FileSpreadsheet, Calendar, Filter, DollarSign, ShoppingCart, TrendingUp } from 'lucide-react';
+import { api } from '../../services/api'; // Import da conexão com o backend
 
+// MOCK DE FALLBACK (Caso a API falhe, os relatórios não quebram)
 const MOCK_DADOS_RELATORIO = [
   { categoria: 'Equipamentos de TI', quantidade: 14, total: 'R$ 38.500,00' },
   { categoria: 'Licenças de Software', quantidade: 8, total: 'R$ 12.200,00' },
@@ -8,11 +10,45 @@ const MOCK_DADOS_RELATORIO = [
   { categoria: 'Serviços de Manutenção', quantidade: 5, total: 'R$ 9.800,00' },
 ];
 
+const MOCK_RESUMO = {
+  totalAprovado: 'R$ 64.850,00',
+  pedidosConcluidos: 49,
+  ticketMedio: 'R$ 1.323,46'
+};
+
 export default function Relatorios() {
   const [periodo, setPeriodo] = useState('30dias');
-  const [depto, setDepto] = useState('TODOS');
+  const [departamento, setDepartamento] = useState('TODOS'); // Atualizado de 'depto'
+  
+  const [dados, setDados] = useState([]);
+  const [resumo, setResumo] = useState({ totalAprovado: 'R$ 0,00', pedidosConcluidos: 0, ticketMedio: 'R$ 0,00' });
+  const [loading, setLoading] = useState(true);
+
+  const carregarRelatorios = async () => {
+    try {
+      setLoading(true);
+      // Aqui você chamará a rota de relatórios quando ela existir
+      // Ex: const response = await api.get(`/relatorios?periodo=${periodo}&departamento=${departamento}`);
+      // setDados(response.data.tabela);
+      // setResumo(response.data.resumo);
+      
+      // Provisório:
+      setDados(MOCK_DADOS_RELATORIO);
+      setResumo(MOCK_RESUMO);
+    } catch (error) {
+      console.error('Erro ao buscar dados do relatório:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Recarrega os dados sempre que os filtros mudarem
+  useEffect(() => {
+    carregarRelatorios();
+  }, [periodo, departamento]);
 
   const handleExportar = (formato) => {
+    // No futuro, isso pode bater numa rota de exportação do backend: api.get('/relatorios/exportar')
     alert(`Exportando relatório em formato ${formato.toUpperCase()}...`);
   };
 
@@ -57,7 +93,7 @@ export default function Relatorios() {
             <select
               value={periodo}
               onChange={(e) => setPeriodo(e.target.value)}
-              className="bg-transparent text-slate-700 font-medium focus:outline-none"
+              className="bg-transparent text-slate-700 font-medium focus:outline-none cursor-pointer"
             >
               <option value="7dias">Últimos 7 dias</option>
               <option value="30dias">Últimos 30 dias</option>
@@ -68,9 +104,9 @@ export default function Relatorios() {
 
           <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs">
             <select
-              value={depto}
-              onChange={(e) => setDepto(e.target.value)}
-              className="bg-transparent text-slate-700 font-medium focus:outline-none"
+              value={departamento}
+              onChange={(e) => setDepartamento(e.target.value)}
+              className="bg-transparent text-slate-700 font-medium focus:outline-none cursor-pointer"
             >
               <option value="TODOS">Todos os Departamentos</option>
               <option value="TI">TI</option>
@@ -82,68 +118,76 @@ export default function Relatorios() {
         </div>
       </div>
 
-      {/* CARDS DE RESUMO */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-semibold uppercase">Total Aprovado</span>
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-              <DollarSign size={18} />
+      {loading ? (
+        <div className="py-12 text-center text-slate-500 font-medium animate-pulse">
+          Calculando relatórios...
+        </div>
+      ) : (
+        <>
+          {/* CARDS DE RESUMO */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+              <div className="flex items-center justify-between text-slate-500">
+                <span className="text-xs font-semibold uppercase">Total Aprovado</span>
+                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                  <DollarSign size={18} />
+                </div>
+              </div>
+              <p className="text-2xl font-bold text-slate-800">{resumo.totalAprovado}</p>
+              <p className="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                <TrendingUp size={12} /> +12% em relação ao período anterior
+              </p>
+            </div>
+
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+              <div className="flex items-center justify-between text-slate-500">
+                <span className="text-xs font-semibold uppercase">Pedidos Concluídos</span>
+                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                  <ShoppingCart size={18} />
+                </div>
+              </div>
+              <p className="text-2xl font-bold text-slate-800">{resumo.pedidosConcluidos} chamados</p>
+              <p className="text-xs text-slate-400">Atendidos dentro do prazo</p>
+            </div>
+
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+              <div className="flex items-center justify-between text-slate-500">
+                <span className="text-xs font-semibold uppercase">Ticket Médio / Pedido</span>
+                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                  <DollarSign size={18} />
+                </div>
+              </div>
+              <p className="text-2xl font-bold text-slate-800">{resumo.ticketMedio}</p>
+              <p className="text-xs text-slate-400">Média por solicitação aprovada</p>
             </div>
           </div>
-          <p className="text-2xl font-bold text-slate-800">R$ 64.850,00</p>
-          <p className="text-xs text-emerald-600 font-medium flex items-center gap-1">
-            <TrendingUp size={12} /> +12% em relação ao mês anterior
-          </p>
-        </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-semibold uppercase">Pedidos Concluídos</span>
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-              <ShoppingCart size={18} />
+          {/* DETALHAMENTO POR CATEGORIA */}
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+            <div className="p-4 border-b border-slate-200 font-bold text-slate-800 text-sm">
+              Gastos por Categoria
             </div>
+            <table className="w-full text-left text-sm text-slate-600">
+              <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-500 border-b border-slate-200">
+                <tr>
+                  <th className="p-4">Categoria</th>
+                  <th className="p-4">Qtd. Solicitações</th>
+                  <th className="p-4 text-right">Valor Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {dados.map((item, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="p-4 font-semibold text-slate-800">{item.categoria}</td>
+                    <td className="p-4 text-slate-600">{item.quantidade} itens</td>
+                    <td className="p-4 text-right font-bold text-slate-800">{item.total}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <p className="text-2xl font-bold text-slate-800">49 chamados</p>
-          <p className="text-xs text-slate-400">Atendidos dentro do prazo</p>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-semibold uppercase">Ticket Médio / Pedido</span>
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-              <DollarSign size={18} />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-slate-800">R$ 1.323,46</p>
-          <p className="text-xs text-slate-400">Média por solicitação aprovada</p>
-        </div>
-      </div>
-
-      {/* DETALHAMENTO POR CATEGORIA */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-        <div className="p-4 border-b border-slate-200 font-bold text-slate-800 text-sm">
-          Gastos por Categoria
-        </div>
-        <table className="w-full text-left text-sm text-slate-600">
-          <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-500 border-b border-slate-200">
-            <tr>
-              <th className="p-4">Categoria</th>
-              <th className="p-4">Qtd. Solicitações</th>
-              <th className="p-4 text-right">Valor Total</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {MOCK_DADOS_RELATORIO.map((item, idx) => (
-              <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                <td className="p-4 font-semibold text-slate-800">{item.categoria}</td>
-                <td className="p-4 text-slate-600">{item.quantidade} itens</td>
-                <td className="p-4 text-right font-bold text-slate-800">{item.total}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+        </>
+      )}
 
     </div>
   );

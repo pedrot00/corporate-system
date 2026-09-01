@@ -9,28 +9,33 @@ import Dashboard from './pages/Dashboard';
 import Usuarios from './pages/Usuarios';
 import Relatorios from './pages/Relatorios';
 
-// Guard de Proteção: Valida autenticação e permissões por perfil
+// Guard de Proteção: Valida autenticação e permissões
 function RotaProtegida({ children, papeisPermitidos = [] }) {
   const { usuario, autenticado } = useAuth();
 
-  if (!autenticado) {
+  if (!autenticado || !usuario) {
     return <Navigate to="/login" replace />;
   }
 
-  if (papeisPermitidos.length > 0 && !papeisPermitidos.includes(usuario.papel)) {
-    const destinoPadrao = usuario.papel === 'FUNCIONARIO' ? '/minhas-solicitacoes' : '/dashboard';
+  // Normaliza o campo para aceitar tanto 'papel' quanto 'perfil'
+  const papelUsuario = usuario.papel || usuario.perfil;
+
+  if (papeisPermitidos.length > 0 && !papeisPermitidos.includes(papelUsuario)) {
+    const destinoPadrao = papelUsuario === 'FUNCIONARIO' ? '/minhas-solicitacoes' : '/dashboard';
     return <Navigate to={destinoPadrao} replace />;
   }
 
   return children;
 }
 
-// Redireciona a rota raiz (/) baseando-se no papel ativo
+// Redireciona a rota inicial baseando-se no papel ativo
 function RedirecionamentoInicial() {
   const { usuario, autenticado } = useAuth();
 
-  if (!autenticado) return <Navigate to="/login" replace />;
-  if (usuario.papel === 'FUNCIONARIO') return <Navigate to="/minhas-solicitacoes" replace />;
+  if (!autenticado || !usuario) return <Navigate to="/login" replace />;
+  
+  const papelUsuario = usuario.papel || usuario.perfil;
+  if (papelUsuario === 'FUNCIONARIO') return <Navigate to="/minhas-solicitacoes" replace />;
   return <Navigate to="/dashboard" replace />;
 }
 
@@ -42,7 +47,7 @@ export default function App() {
           {/* ROTA PÚBLICA */}
           <Route path="/login" element={<Login />} />
 
-          {/* ROTAS PROTEGIDAS (ENVOLVIDAS PELO LAYOUT) */}
+          {/* ROTAS PROTEGIDAS */}
           <Route
             path="/*"
             element={

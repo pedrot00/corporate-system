@@ -17,35 +17,36 @@ export default function Layout({ children }) {
       titulo: 'Dashboard',
       rota: '/dashboard',
       icone: LayoutDashboard,
-      papeis: ['GESTOR', 'ADMIN']
+      perfis: ['GESTOR', 'ADMIN'] // Renomeado para perfis por consistência
     },
     {
       titulo: 'Minhas Solicitações',
       rota: '/minhas-solicitacoes',
       icone: UserCheck,
-      papeis: ['FUNCIONARIO', 'GESTOR', 'ADMIN']
+      perfis: ['FUNCIONARIO', 'GESTOR', 'ADMIN']
     },
     {
       titulo: 'Todas as Solicitações',
       rota: '/solicitacoes',
       icone: FileText,
-      papeis: ['GESTOR', 'ADMIN']
+      perfis: ['GESTOR', 'ADMIN']
     },
     {
       titulo: 'Relatórios',
       rota: '/relatorios',
       icone: BarChart2,
-      papeis: ['GESTOR', 'ADMIN']
+      perfis: ['GESTOR', 'ADMIN']
     },
     {
       titulo: 'Gestão de Usuários',
       rota: '/usuarios',
       icone: Users,
-      papeis: ['ADMIN']
+      perfis: ['ADMIN']
     }
   ];
 
-  const menuFiltrado = menuItens.filter(item => item.papeis.includes(usuario?.papel));
+  // Alterado de usuario?.papel para usuario?.perfil
+  const menuFiltrado = menuItens.filter(item => item.perfis.includes(usuario?.perfil));
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC]">
@@ -87,7 +88,8 @@ export default function Layout({ children }) {
             <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold text-slate-800">{usuario.nome}</p>
-                <p className="text-[11px] text-slate-500 capitalize">{usuario.papel.toLowerCase()}</p>
+                {/* Alterado de usuario.papel.toLowerCase() usando Optional Chaining */}
+                <p className="text-[11px] text-slate-500 capitalize">{usuario?.perfil?.toLowerCase()}</p>
               </div>
               <button
                 onClick={handleSair}
