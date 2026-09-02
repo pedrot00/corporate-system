@@ -1,5 +1,6 @@
 import solicitacoesRouter from "./routers/solicitacoes.router.js";
 import usuariosRouter from "./routers/usuarios.router.js";
+import relatoriosRouter from "./routers/relatorios.router.js";
 import dashboardRouter from "./routers/dashboard.router.js";
 import authRouter from "./routers/auth.router.js"
 import { manipuladorDeErros } from './middlewares/error.middleware.js';
@@ -14,6 +15,7 @@ app.use('/auth', authRouter);
 app.use("/usuarios", usuariosRouter);
 app.use("/solicitacoes", solicitacoesRouter);
 app.use("/dashboard", dashboardRouter);
+app.use("/relatorios", relatoriosRouter);
 app.use(manipuladorDeErros);
 
 const PORTA = 3000;
