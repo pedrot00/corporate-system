@@ -12,23 +12,49 @@ export default function NovaSolicitacaoModal({ aberto, onClose, onCriar, usuario
 
   if (!aberto) return null;
 
-  const handleSubmit = (e) => {
+const handleSubmit = (e) => {
     e.preventDefault();
+
+    // 1. Limpa a formatação visual (remove pontos e troca a vírgula por ponto)
+    // Usamos String() por segurança, para garantir que o replace não falhe
+    const valorString = String(formData.valorEstimado || "0");
+    const valorLimpo = valorString.replace(/\./g, '').replace(',', '.');
+    const valorNumerico = parseFloat(valorLimpo);
+
+    // 2. Envia os dados para a API
     onCriar({
       ...formData,
-      valorEstimado: Number(formData.valorEstimado) // Envia como Número
+      valorEstimado: valorNumerico // Agora vai limpinho, ex: 1234.56
     });
     
-    // Reseta o formulário
+    // 3. Reseta o formulário
     setFormData({
       titulo: '',
       descricao: '',
       categoria: 'Equipamentos de TI',
-      departamento: usuario?.departamento || 'TI',
+      departamento: '', // Deixei vazio para forçar o usuário a escolher naquele <select> novo
       prioridade: 'MEDIA',
       valorEstimado: '',
     });
     onClose();
+  };
+  
+  const handleValorChange = (e) => {
+    let valor = e.target.value;
+    
+    // Remove tudo que não for número
+    valor = valor.replace(/\D/g, "");
+    
+    // Formata para moeda (divide por 100 para criar os decimais)
+    if (valor) {
+      valor = (Number(valor) / 100).toLocaleString("pt-BR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    // Atualiza o estado (adapte "formData" para o nome do seu estado atual)
+    setFormData({ ...formData, valorEstimado: valor });
   };
 
   return (
@@ -79,13 +105,21 @@ export default function NovaSolicitacaoModal({ aberto, onClose, onCriar, usuario
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">Departamento *</label>
-              <input
-                type="text"
+              <select
                 required
-                value={formData.departamento}
-                onChange={(e) => setFormData({ ...formData, departamento: e.target.value })}
+                name="departamento"
+                value={formData.departamento} /* Ajuste caso sua variável de estado tenha outro nome */
+                onChange={(e) => setFormData({ ...formData, departamento: e.target.value })} /* Ajuste a função de mudança conforme seu arquivo */
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
+              >
+                <option value="" disabled>Selecione um departamento...</option>
+                <option value="RH">RH</option>
+                <option value="TI">TI</option>
+                <option value="Financeiro">Financeiro</option>
+                <option value="Contabilidade">Contabilidade</option>
+                <option value="Comercial">Comercial</option>
+                <option value="Operações">Operações</option>
+              </select>
             </div>
           </div>
 
@@ -105,15 +139,17 @@ export default function NovaSolicitacaoModal({ aberto, onClose, onCriar, usuario
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">Valor Estimado numérico (R$) *</label>
-              <input
-                type="number"
-                step="0.01"
-                required
-                placeholder="Ex: 2500.00"
-                value={formData.valorEstimado}
-                onChange={(e) => setFormData({ ...formData, valorEstimado: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-2.5 text-sm font-medium text-slate-500">R$</span>
+                <input
+                  type="text"
+                  required
+                  placeholder="0,00"
+                  value={formData.valorEstimado}
+                  onChange={handleValorChange}
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
             </div>
           </div>
 

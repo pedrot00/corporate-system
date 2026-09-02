@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Eye, CheckCircle, Clock, XCircle, ShoppingCart, CheckCheck } from 'lucide-react';
+import { Plus, Search, Filter, Eye, CheckCircle, Clock, XCircle, ShoppingCart, CheckCheck, Trash2, FileSpreadsheet } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../services/api';
 import NovaSolicitacaoModal from './components/NovaSolicitacaoModal';
@@ -10,8 +10,13 @@ export default function Solicitacoes({ apenasMinhas = false }) {
   const [solicitacoes, setSolicitacoes] = useState([]);
   const [busca, setBusca] = useState('');
   const [estadoFiltro, setEstadoFiltro] = useState('TODOS');
+  const [departamentoFiltro, setDepartamentoFiltro] = useState('TODOS');
+  const [prioridadeFiltro, setPrioridadeFiltro] = useState('TODOS');
   const [modalNovaAberto, setModalNovaAberto] = useState(false);
   const [itemDetalhes, setItemDetalhes] = useState(null);
+
+  // VERIFICA SE O USUÁRIO É ADMIN
+  const isAdmin = usuario?.papel === 'ADMIN' || usuario?.perfil === 'ADMIN';
 
   // BUSCA OS DADOS DA API
   const carregarSolicitacoes = async () => {
@@ -36,8 +41,12 @@ export default function Solicitacoes({ apenasMinhas = false }) {
     const atendeBusca = item.titulo.toLowerCase().includes(busca.toLowerCase()) ||
                         nomeSolicitante.toLowerCase().includes(busca.toLowerCase()) ||
                         item.departamento.toLowerCase().includes(busca.toLowerCase());
+    
     const atendeEstado = estadoFiltro === 'TODOS' || item.estado === estadoFiltro;
-    return atendeBusca && atendeEstado;
+    const atendeDepartamento = departamentoFiltro === 'TODOS' || item.departamento === departamentoFiltro;
+    const atendePrioridade = prioridadeFiltro === 'TODOS' || item.prioridade === prioridadeFiltro;
+    
+    return atendeBusca && atendeEstado && atendeDepartamento && atendePrioridade;
   });
 
   const handleTransicionarEstado = async (id, novoEstado, observacao = '') => {
@@ -58,6 +67,17 @@ export default function Solicitacoes({ apenasMinhas = false }) {
     }
   };
 
+  // FUNÇÃO PARA DELETAR A SOLICITAÇÃO
+  const handleDeletarSolicitacao = async (id) => {
+    if (!window.confirm('Tem certeza que deseja excluir esta solicitação permanentemente?')) return;
+    try {
+      await api.delete(`/solicitacoes/${id}`);
+      carregarSolicitacoes(); // Recarrega a lista após deletar
+    } catch (error) {
+      alert(error.response?.data?.error || 'Erro ao excluir solicitação.');
+    }
+  };
+
   const abrirDetalhes = async (id) => {
     try {
       // Busca a solicitação com o histórico completo aninhado
@@ -66,6 +86,39 @@ export default function Solicitacoes({ apenasMinhas = false }) {
     } catch (error) {
       alert('Erro ao carregar detalhes.');
     }
+  };
+
+  const handleExportarCSV = () => {
+    if (chamadosFiltrados.length === 0) {
+      return alert('Não há dados para exportar.');
+    }
+    
+    // Criação do cabeçalho
+    const cabecalho = ['ID', 'Titulo', 'Prioridade', 'Categoria', 'Solicitante', 'Departamento', 'Valor Estimado', 'Estado'];
+    
+    // Mapeamento dos dados em tela para linhas do CSV
+    const linhas = chamadosFiltrados.map(item => [
+      item.id,
+      `"${item.titulo}"`, // Aspas evitam quebra caso o texto tenha vírgulas
+      item.prioridade,
+      `"${item.categoria}"`,
+      `"${item.solicitante?.nome || 'Desconhecido'}"`,
+      `"${item.departamento}"`,
+      item.valorEstimado,
+      item.estado
+    ]);
+
+    // Montagem do arquivo separando colunas por ponto e vírgula
+    const csvContent = "\uFEFF" + [cabecalho.join(';'), ...linhas.map(l => l.join(';'))].join('\n');
+    
+    // Download do arquivo
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'solicitacoes_exportadas.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -80,13 +133,23 @@ export default function Solicitacoes({ apenasMinhas = false }) {
           </p>
         </div>
 
-        <button
-          onClick={() => setModalNovaAberto(true)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm self-start md:self-auto"
-        >
-          <Plus size={18} />
-          Nova Solicitação
-        </button>
+        <div className="flex items-center gap-3 self-start md:self-auto">
+          <button
+            onClick={handleExportarCSV}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm"
+          >
+            <FileSpreadsheet size={18} />
+            Exportar CSV
+          </button>
+
+          <button
+            onClick={() => setModalNovaAberto(true)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm"
+          >
+            <Plus size={18} />
+            Nova Solicitação
+          </button>
+        </div>
       </div>
 
       {/* FILTROS */}
@@ -102,20 +165,46 @@ export default function Solicitacoes({ apenasMinhas = false }) {
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <Filter size={16} className="text-slate-400" />
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <Filter size={16} className="text-slate-400 shrink-0" />
+          
           <select
             value={estadoFiltro}
             onChange={(e) => setEstadoFiltro(e.target.value)}
-            className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none"
+            className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
           >
-            <option value="TODOS">Todos os Estados</option>
+            <option value="TODOS">Filtrar por Estados</option>
             <option value="PENDENTE">PENDENTE</option>
             <option value="SOLICITACAO_REENVIADA">SOLICITACAO_REENVIADA</option>
             <option value="APROVADA">APROVADA</option>
             <option value="EM_COMPRA">EM_COMPRA</option>
             <option value="FINALIZADA">FINALIZADA</option>
             <option value="REJEITADA">REJEITADA</option>
+          </select>
+
+          <select
+            value={departamentoFiltro}
+            onChange={(e) => setDepartamentoFiltro(e.target.value)}
+            className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          >
+            <option value="TODOS">Filtrar por Deptos</option>
+            <option value="RH">RH</option>
+            <option value="TI">TI</option>
+            <option value="Financeiro">Financeiro</option>
+            <option value="Contabilidade">Contabilidade</option>
+            <option value="Comercial">Comercial</option>
+            <option value="Operações">Operações</option>
+          </select>
+
+          <select
+            value={prioridadeFiltro}
+            onChange={(e) => setPrioridadeFiltro(e.target.value)}
+            className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          >
+            <option value="TODOS">Filtrar por Prioridades</option>
+            <option value="ALTA">Alta</option>
+            <option value="MEDIA">Média</option>
+            <option value="BAIXA">Baixa</option>
           </select>
         </div>
       </div>
@@ -170,12 +259,23 @@ export default function Solicitacoes({ apenasMinhas = false }) {
                   </span>
                 </td>
                 <td className="p-4 text-right">
-                  <button
-                    onClick={() => abrirDetalhes(item.id)}
-                    className="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors inline-flex items-center gap-1"
-                  >
-                    <Eye size={14} /> Detalhes
-                  </button>
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => abrirDetalhes(item.id)}
+                      className="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors inline-flex items-center gap-1"
+                    >
+                      <Eye size={14} /> Detalhes
+                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => handleDeletarSolicitacao(item.id)}
+                        className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition-colors"
+                        title="Excluir Solicitação"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

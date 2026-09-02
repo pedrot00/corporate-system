@@ -1,62 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
 import { 
   DollarSign, ClipboardList, Ticket, Percent, 
-  Calendar, MoreHorizontal, RefreshCw 
+  Calendar, RefreshCw, Clock, Download 
 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { api } from '../../services/api';
 
-// MOCK DE FALLBACK COM DADOS ILUSTRATIVOS
-const mockDashboardData = {
-  kpis: { 
-    custoTotal: 64850.00, 
-    totalSolicitacoes: 49, 
-    ticketMedio: 1323.46, 
-    taxaAprovacao: 84.5 
-  },
-  evolucaoMensal: [
-    { mes: 'Jan', valor: 8500 },
-    { mes: 'Fev', valor: 12200 },
-    { mes: 'Mar', valor: 9800 },
-    { mes: 'Abr', valor: 15400 },
-    { mes: 'Mai', valor: 18900 },
-    { mes: 'Jun', valor: 64850 },
-  ],
-  distribuicaoStatus: [
-    { name: 'APROVADO', value: 55, count: 27, color: '#3B82F6' },
-    { name: 'PENDENTE', value: 25, count: 12, color: '#F59E0B' },
-    { name: 'EM COMPRA', value: 12, count: 6, color: '#8B5CF6' },
-    { name: 'REJEITADO', value: 8, count: 4, color: '#EF4444' },
-  ],
-  custoPorDepartamento: [
-    { depto: 'TI', valor: 38500 },
-    { depto: 'Financeiro', valor: 12200 },
-    { depto: 'Operações', valor: 9800 },
-    { depto: 'RH', valor: 4350 },
-  ],
-  volumePorPrioridade: [
-    { prioridade: 'Alta', qtd: 22, fill: '#EF4444' },
-    { prioridade: 'Média', qtd: 18, fill: '#F59E0B' },
-    { prioridade: 'Baixa', qtd: 9, fill: '#10B981' },
-  ]
-};
-
 export default function Dashboard() {
-  const [data, setData] = useState(mockDashboardData);
+  const [data, setData] = useState({
+    kpis: { custoTotal: 0, totalSolicitacoes: 0, ticketMedio: 0, taxaAprovacao: 0, leadTime: 0 },
+    evolucaoMensal: [],
+    distribuicaoStatus: [],
+    custoPorDepartamento: [],
+    volumePorPrioridade: [],
+    sazonalidade: [],
+    mapaCalor: { categorias: [], dados: [] }
+  });
+  
   const [loading, setLoading] = useState(true);
+  const [exportando, setExportando] = useState(false);
+  
+  // Referência para capturar a div principal do dashboard
+  const dashboardRef = useRef(null);
 
   const carregarDadosDashboard = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/dashboard/estatisticas');
+      const response = await api.get('/dashboard'); 
       if (response.data && response.data.kpis) {
         setData(response.data);
       }
     } catch (error) {
-      // Caso a rota ainda não exista no backend, mantém os dados de fallback para visualização
+      console.error("Erro ao buscar dados do dashboard:", error);
     } finally {
       setLoading(false);
     }
@@ -66,38 +46,103 @@ export default function Dashboard() {
     carregarDadosDashboard();
   }, []);
 
+  // Função para exportar a tela para PDF
+  const exportarPDF = async () => {
+    if (!dashboardRef.current) return;
+    
+    try {
+      setExportando(true);
+      const canvas = await html2canvas(dashboardRef.current, { 
+        scale: 2, // Aumenta a qualidade/resolução dos gráficos
+        useCORS: true,
+        backgroundColor: '#F8FAFC' // Fundo exato do dashboard
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save('dashboard-compras.pdf');
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      alert('Ocorreu um erro ao gerar o PDF.');
+    } finally {
+      setExportando(false);
+    }
+  };
+
+  const getCorMapaCalor = (valor, maxValor) => {
+    if (valor === 0) return 'bg-slate-50 text-slate-400';
+    return `bg-indigo-600 text-white`; 
+  };
+
+  const getMaxHeatValue = () => {
+    let max = 0;
+    data.mapaCalor.dados.forEach(linha => {
+      data.mapaCalor.categorias.forEach(cat => {
+        if (linha[cat] > max) max = linha[cat];
+      });
+    });
+    return max;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[80vh]">
-        <div className="text-slate-500 font-medium animate-pulse">Carregando indicadores...</div>
+        <div className="text-slate-500 font-medium animate-pulse flex flex-col items-center gap-2">
+          <RefreshCw className="animate-spin" size={24} />
+          Buscando indicadores em tempo real...
+        </div>
       </div>
     );
   }
 
+  const maxHeatValue = getMaxHeatValue();
+  const coresStatus = { 'APROVADA': '#3B82F6', 'PENDENTE': '#F59E0B', 'EM_COMPRA': '#8B5CF6', 'REJEITADA': '#EF4444', 'FINALIZADA': '#10B981' };
+  const getStatusColor = (status) => coresStatus[status] || '#94A3B8';
+
   return (
-    <div className="p-8 bg-[#F8FAFC] min-h-screen font-sans text-slate-800 space-y-6">
+    // Adicionada a referência (ref={dashboardRef}) na div raiz
+    <div ref={dashboardRef} className="p-8 bg-[#F8FAFC] min-h-screen font-sans text-slate-800 space-y-6">
       
       {/* CABEÇALHO */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm data-html2canvas-ignore">
         <div>
           <h1 className="text-xl font-bold text-slate-800">Visão Geral</h1>
-          <p className="text-xs text-slate-500">Métricas gerais de compras e requisições</p>
+          <p className="text-xs text-slate-500">Métricas gerais conectadas ao banco de dados</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600">
             <Calendar size={14} className="text-slate-500" />
-            <span>01/01/2026 - 31/12/2026</span>
+            <span>Painel Atual</span>
           </div>
+          <button onClick={carregarDadosDashboard} className="p-1.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition-colors" title="Atualizar dados">
+            <RefreshCw size={16} />
+          </button>
+          
+          {/* NOVO BOTÃO DE EXPORTAR */}
+          <button 
+            onClick={exportarPDF} 
+            disabled={exportando}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm
+              ${exportando ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'} text-white`}
+          >
+            {exportando ? <RefreshCw className="animate-spin" size={16} /> : <Download size={16} />}
+            {exportando ? 'Gerando...' : 'Exportar PDF'}
+          </button>
         </div>
       </div>
 
       {/* KPI CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg"><DollarSign size={20} /></div>
             <div>
-              <p className="text-xs font-medium text-slate-500">Custo Total</p>
+              <p className="text-[11px] font-semibold text-slate-500 uppercase">Custo Total</p>
               <h3 className="text-lg font-bold text-slate-900">
                 R$ {data.kpis.custoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </h3>
@@ -109,7 +154,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg"><ClipboardList size={20} /></div>
             <div>
-              <p className="text-xs font-medium text-slate-500">Total de Solicitações</p>
+              <p className="text-[11px] font-semibold text-slate-500 uppercase">Total Pedidos</p>
               <h3 className="text-lg font-bold text-slate-900">{data.kpis.totalSolicitacoes}</h3>
             </div>
           </div>
@@ -119,7 +164,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg"><Ticket size={20} /></div>
             <div>
-              <p className="text-xs font-medium text-slate-500">Ticket Médio por Pedido</p>
+              <p className="text-[11px] font-semibold text-slate-500 uppercase">Ticket Médio</p>
               <h3 className="text-lg font-bold text-slate-900">
                 R$ {data.kpis.ticketMedio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </h3>
@@ -131,8 +176,18 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-amber-50 text-amber-600 rounded-lg"><Percent size={20} /></div>
             <div>
-              <p className="text-xs font-medium text-slate-500">Taxa de Aprovação</p>
+              <p className="text-[11px] font-semibold text-slate-500 uppercase">Aprovação</p>
               <h3 className="text-lg font-bold text-slate-900">{data.kpis.taxaAprovacao}%</h3>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-rose-50 text-rose-600 rounded-lg"><Clock size={20} /></div>
+            <div>
+              <p className="text-[11px] font-semibold text-slate-500 uppercase">Lead Time Médio</p>
+              <h3 className="text-lg font-bold text-slate-900">{data.kpis.leadTime} dias</h3>
             </div>
           </div>
         </div>
@@ -143,7 +198,6 @@ export default function Dashboard() {
         <div className="lg:col-span-7 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-sm font-bold text-slate-800">Evolução dos Gastos (R$)</h2>
-            <button className="text-slate-400 hover:text-slate-600"><MoreHorizontal size={18} /></button>
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -156,7 +210,7 @@ export default function Dashboard() {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                 <XAxis dataKey="mes" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748B' }} />
-                <YAxis axisLine={false} tickLine={false} tickFormatter={(v) => `${v/1000}k`} tick={{ fontSize: 11, fill: '#64748B' }} />
+                <YAxis axisLine={false} tickLine={false} tickFormatter={(v) => v >= 1000 ? `${v/1000}k` : v} tick={{ fontSize: 11, fill: '#64748B' }} />
                 <Tooltip formatter={(v) => [`R$ ${v.toLocaleString('pt-BR')}`, 'Gastos']} />
                 <Area type="monotone" dataKey="valor" stroke="#4F46E5" strokeWidth={2} fillOpacity={1} fill="url(#colorValor)" dot={{ r: 3, fill: '#4F46E5' }} />
               </AreaChart>
@@ -167,19 +221,17 @@ export default function Dashboard() {
         <div className="lg:col-span-5 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-sm font-bold text-slate-800">Solicitações por Status</h2>
-            <button className="text-slate-400 hover:text-slate-600"><MoreHorizontal size={18} /></button>
           </div>
-          
           <div className="grid grid-cols-1 sm:grid-cols-2 items-center gap-4">
             <div className="h-48 relative">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={data.distribuicaoStatus} innerRadius={50} outerRadius={70} paddingAngle={2} dataKey="value">
                     {data.distribuicaoStatus.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                      <Cell key={`cell-${index}`} fill={getStatusColor(entry.name)} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => [`${value}%`, 'Proporção']} />
+                  <Tooltip formatter={(value) => [value, 'Pedidos']} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -187,15 +239,14 @@ export default function Dashboard() {
                 <span className="text-[10px] text-slate-400 uppercase font-semibold">Total</span>
               </div>
             </div>
-
             <div className="space-y-2 text-xs">
               {data.distribuicaoStatus.map((item) => (
                 <div key={item.name} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }}></span>
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getStatusColor(item.name) }}></span>
                     <span className="text-slate-600 font-medium">{item.name}</span>
                   </div>
-                  <span className="text-slate-800 font-bold">{item.value}% ({item.count})</span>
+                  <span className="text-slate-800 font-bold">{item.value}</span>
                 </div>
               ))}
             </div>
@@ -203,53 +254,94 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* LINHA 2 DE GRÁFICOS */}
+      {/* LINHA 2: SAZONALIDADE E DEPARTAMENTOS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex justify-between items-center mb-4">
+            <h2 className="text-sm font-bold text-slate-800">Sazonalidade (Pedidos por Dia)</h2>
+          </div>
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data.sazonalidade}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                <XAxis dataKey="dia" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748B' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748B' }} allowDecimals={false} />
+                <Tooltip formatter={(v) => [v, 'Qtd de Pedidos']} cursor={{fill: '#F1F5F9'}} />
+                <Bar dataKey="qtd" fill="#0EA5E9" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <div className="flex justify-between items-center mb-4">
             <h2 className="text-sm font-bold text-slate-800">Gastos por Departamento (R$)</h2>
-            <button className="text-slate-400 hover:text-slate-600"><MoreHorizontal size={18} /></button>
           </div>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.custoPorDepartamento}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                 <XAxis dataKey="depto" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748B' }} />
-                <YAxis axisLine={false} tickLine={false} tickFormatter={(v) => `${v/1000}k`} tick={{ fontSize: 11, fill: '#64748B' }} />
-                <Tooltip formatter={(v) => [`R$ ${v.toLocaleString('pt-BR')}`, 'Gasto Total']} />
+                <YAxis axisLine={false} tickLine={false} tickFormatter={(v) => v >= 1000 ? `${v/1000}k` : v} tick={{ fontSize: 11, fill: '#64748B' }} />
+                <Tooltip formatter={(v) => [`R$ ${v.toLocaleString('pt-BR')}`, 'Gasto']} cursor={{fill: '#F1F5F9'}} />
                 <Bar dataKey="valor" fill="#4F46E5" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-sm font-bold text-slate-800">Solicitações por Prioridade</h2>
-            <button className="text-slate-400 hover:text-slate-600"><MoreHorizontal size={18} /></button>
-          </div>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart layout="vertical" data={data.volumePorPrioridade}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#F1F5F9" />
-                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748B' }} />
-                <YAxis dataKey="prioridade" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748B' }} />
-                <Tooltip />
-                <Bar dataKey="qtd" radius={[0, 4, 4, 0]}>
-                  {data.volumePorPrioridade.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      {/* RODAPÉ */}
-      <div className="flex items-center justify-center gap-2 text-xs text-slate-400 pt-2">
-        <RefreshCw size={12} />
-        <span>Dados atualizados em {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+      {/* LINHA 3: MAPA DE CALOR */}
+      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <h2 className="text-sm font-bold text-slate-800 mb-4">Mapa de Calor: Departamentos vs Categorias (Volumetria)</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead>
+              <tr>
+                <th className="p-3 font-semibold text-slate-600 bg-slate-50 border-b border-slate-200 w-48">
+                  Departamento
+                </th>
+                {data.mapaCalor.categorias.map(cat => (
+                  <th key={cat} className="p-3 font-semibold text-center text-slate-600 bg-slate-50 border-b border-slate-200">
+                    {cat}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {data.mapaCalor.dados.map((linha, idx) => (
+                <tr key={idx}>
+                  <td className="p-3 font-medium text-slate-700 bg-white border-r border-slate-100">
+                    {linha.depto}
+                  </td>
+                  {data.mapaCalor.categorias.map(cat => {
+                    const valor = linha[cat];
+                    const intensidade = maxHeatValue > 0 ? valor / maxHeatValue : 0;
+                    return (
+                      <td key={cat} className="p-1 text-center">
+                        <div 
+                          className={`w-full h-10 flex items-center justify-center rounded transition-all font-semibold ${valor > 0 ? 'text-indigo-900' : 'text-slate-400'}`}
+                          style={{
+                            backgroundColor: valor > 0 ? `rgba(99, 102, 241, ${Math.max(0.1, intensidade)})` : '#F8FAFC'
+                          }}
+                        >
+                          {valor > 0 ? valor : '-'}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+              {data.mapaCalor.dados.length === 0 && (
+                <tr>
+                  <td colSpan={data.mapaCalor.categorias.length + 1} className="p-6 text-center text-slate-400">
+                    Não há dados cruzados suficientes.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
     </div>
