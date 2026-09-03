@@ -134,6 +134,9 @@ export default function Solicitacoes({ apenasMinhas = false }) {
         </div>
 
         <div className="flex items-center gap-3 self-start md:self-auto">
+          <div className="bg-slate-100 border border-slate-200 text-slate-700 text-sm font-semibold px-4 py-2.5 rounded-lg flex items-center shadow-sm">
+            Total: {chamadosFiltrados.length}
+          </div>
           <button
             onClick={handleExportarCSV}
             className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm"
@@ -153,25 +156,25 @@ export default function Solicitacoes({ apenasMinhas = false }) {
       </div>
 
       {/* FILTROS */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+      <div className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
         <div className="relative w-full md:w-96">
-          <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
+          <Search className="absolute left-3 top-2.5 text-black" size={18} />
           <input
             type="text"
             placeholder="Buscar por título, departamento ou solicitante..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-black rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring--500"
           />
         </div>
 
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <Filter size={16} className="text-slate-400 shrink-0" />
+          <Filter size={16} className="text-black shrink-0" />
           
           <select
             value={estadoFiltro}
             onChange={(e) => setEstadoFiltro(e.target.value)}
-            className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="bg-slate-50 border border-black text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
           >
             <option value="TODOS">Filtrar por Estados</option>
             <option value="PENDENTE">PENDENTE</option>
@@ -185,21 +188,20 @@ export default function Solicitacoes({ apenasMinhas = false }) {
           <select
             value={departamentoFiltro}
             onChange={(e) => setDepartamentoFiltro(e.target.value)}
-            className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="bg-slate-50 border border-black text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
           >
             <option value="TODOS">Filtrar por Deptos</option>
             <option value="RH">RH</option>
             <option value="TI">TI</option>
             <option value="Financeiro">Financeiro</option>
             <option value="Contabilidade">Contabilidade</option>
-            <option value="Comercial">Comercial</option>
             <option value="Operações">Operações</option>
           </select>
 
           <select
             value={prioridadeFiltro}
             onChange={(e) => setPrioridadeFiltro(e.target.value)}
-            className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="bg-slate-50 border border-black text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
           >
             <option value="TODOS">Filtrar por Prioridades</option>
             <option value="ALTA">Alta</option>

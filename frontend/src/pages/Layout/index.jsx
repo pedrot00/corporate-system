@@ -12,23 +12,12 @@ export default function Layout({ children }) {
     navigate('/login');
   };
 
+  // NOVA ORDEM DAS ABAS
   const menuItens = [
     {
       titulo: 'Dashboard',
       rota: '/dashboard',
       icone: LayoutDashboard,
-      perfis: ['GESTOR', 'ADMIN'] // Renomeado para perfis por consistência
-    },
-    {
-      titulo: 'Minhas Solicitações',
-      rota: '/minhas-solicitacoes',
-      icone: UserCheck,
-      perfis: ['FUNCIONARIO', 'GESTOR', 'ADMIN']
-    },
-    {
-      titulo: 'Todas as Solicitações',
-      rota: '/solicitacoes',
-      icone: FileText,
       perfis: ['GESTOR', 'ADMIN']
     },
     {
@@ -38,6 +27,18 @@ export default function Layout({ children }) {
       perfis: ['GESTOR', 'ADMIN']
     },
     {
+      titulo: 'Todas as Solicitações',
+      rota: '/solicitacoes',
+      icone: FileText,
+      perfis: ['GESTOR', 'ADMIN']
+    },
+    {
+      titulo: 'Minhas Solicitações',
+      rota: '/minhas-solicitacoes',
+      icone: UserCheck,
+      perfis: ['FUNCIONARIO', 'GESTOR', 'ADMIN']
+    },
+    {
       titulo: 'Gestão de Usuários',
       rota: '/usuarios',
       icone: Users,
@@ -45,62 +46,62 @@ export default function Layout({ children }) {
     }
   ];
 
-  // Alterado de usuario?.papel para usuario?.perfil
   const menuFiltrado = menuItens.filter(item => item.perfis.includes(usuario?.perfil));
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC]">
-      <aside className="w-64 bg-white border-r border-slate-200 p-6 flex flex-col justify-between shrink-0">
-        <div>
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white text-sm">
-              C
-            </div>
-            <span className="font-bold text-slate-800 text-lg">Companio</span>
+      {/* Removemos o justify-between para os itens fluírem de cima para baixo naturalmente */}
+      <aside className="w-64 bg-white border-r border-black-200 p-6 flex flex-col shrink-0 overflow-y-auto">
+        
+        {/* LOGO */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white text-sm">
+            C
           </div>
-
-          <nav className="space-y-1">
-            {menuFiltrado.map((item) => {
-              const Icon = item.icone;
-              return (
-                <NavLink
-                  key={item.rota}
-                  to={item.rota}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-indigo-50 text-indigo-600 font-semibold'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                    }`
-                  }
-                >
-                  <Icon size={18} />
-                  {item.titulo}
-                </NavLink>
-              );
-            })}
-          </nav>
+          <span className="font-bold text-slate-800 text-lg">Companio</span>
         </div>
 
-        {/* RODAPÉ DO USUÁRIO LOGADO + LOGOUT */}
+        {/* PERFIL DO USUÁRIO NO TOPO (MOVIDO DO RODAPÉ) */}
         {usuario && (
-          <div className="pt-4 border-t border-slate-200 space-y-3">
-            <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex items-center justify-between">
+          <div className="mb-6 pb-6 border-b border-slate-100  ">
+            <div className="bg-slate-50 p-3 rounded-xl border border-indigo-300 flex items-center justify-between shadow-sm  border border-[#716ad8]">
               <div>
                 <p className="text-xs font-bold text-slate-800">{usuario.nome}</p>
-                {/* Alterado de usuario.papel.toLowerCase() usando Optional Chaining */}
                 <p className="text-[11px] text-slate-500 capitalize">{usuario?.perfil?.toLowerCase()}</p>
               </div>
               <button
                 onClick={handleSair}
                 title="Sair do Sistema"
-                className="text-slate-400 hover:text-red-600 p-1.5 rounded-md hover:bg-white transition-colors"
+                className="text-red-600 p-1.5 rounded-lg border border-transparent transition-all"
               >
                 <LogOut size={16} />
               </button>
             </div>
           </div>
         )}
+
+        {/* NAVEGAÇÃO */}
+        <nav className="space-y-1.5">
+          {menuFiltrado.map((item) => {
+            const Icon = item.icone;
+            return (
+              <NavLink
+                key={item.rota}
+                to={item.rota}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`
+                }
+              >
+                <Icon size={18} />
+                {item.titulo}
+              </NavLink>
+            );
+          })}
+        </nav>
       </aside>
 
       <main className="flex-1 overflow-y-auto">

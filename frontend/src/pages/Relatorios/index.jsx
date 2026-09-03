@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, FileSpreadsheet, Calendar, Filter, DollarSign, ShoppingCart, TrendingUp, CheckCircle, Clock, XCircle, Inbox, Users } from 'lucide-react';
+import { Download, FileSpreadsheet, Calendar, Filter, DollarSign, ShoppingCart, TrendingUp, CheckCircle, Clock, XCircle, Inbox, Users, CheckCheck, ClipboardList } from 'lucide-react';
 import { api } from '../../services/api'; 
 
 export default function Relatorios() {
@@ -37,18 +37,23 @@ export default function Relatorios() {
     carregarRelatorios();
   }, [periodo, departamento]);
 
+  const totalSolicitacoes = resumo.pedidosConcluidos + resumo.qtdAprovados + resumo.qtdEmCompra + resumo.qtdPendentes + resumo.qtdRejeitadas;
+
+  // --- CORREÇÃO DO CSV ---
   const exportarCSV = () => {
-    if (dados.length === 0) return alert('Não há dados para exportar.');
+    if (!resumo) return alert('Não há dados para exportar.');
     
-    // Constrói a string do CSV garantindo quebra de blocos visíveis
     const linhasCSV = [
-      'RESUMO GERAL',
+      'RESUMO FINANCEIRO',
       `Total Finalizado;${resumo.totalFinalizado}`,
-      `Pedidos Concluidos;${resumo.pedidosConcluidos}`,
+      `Total de Solicitacoes;${totalSolicitacoes}`,
       `Ticket Medio;${resumo.ticketMedio}`,
-      `Pendentes;${resumo.qtdPendentes}`,
+      '',
+      'STATUS DAS SOLICITACOES',
+      `Finalizadas;${resumo.pedidosConcluidos}`,
       `Aprovadas;${resumo.qtdAprovados}`,
       `Em Compras;${resumo.qtdEmCompra}`,
+      `Pendentes;${resumo.qtdPendentes}`,
       `Rejeitadas;${resumo.qtdRejeitadas}`,
       '',
       'GASTOS POR CATEGORIA - SOLICITACOES FINALIZADAS',
@@ -60,7 +65,7 @@ export default function Relatorios() {
       ...topSolicitantes.map((user, idx) => `${idx + 1};${user.nome};${user.quantidade};${user.total}`)
     ];
     
-    const conteudoCSV = '\uFEFF' + linhasCSV.join('\n'); // \uFEFF força o UTF-8 no Excel
+    const conteudoCSV = '\uFEFF' + linhasCSV.join('\n'); 
 
     const blob = new Blob([conteudoCSV], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -72,6 +77,7 @@ export default function Relatorios() {
     document.body.removeChild(link);
   };
 
+  // --- CORREÇÃO DO PDF ---
   const exportarPDF = () => {
     const janelaPDF = window.open('', '_blank');
     
@@ -84,9 +90,17 @@ export default function Relatorios() {
             h1 { color: #0f172a; font-size: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px; }
             h2 { color: #334155; font-size: 18px; margin-top: 30px; margin-bottom: 15px; }
             .grid-resumo { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 30px; }
-            .card { border: 1px solid #cbd5e1; padding: 15px; border-radius: 6px; min-width: 160px; background: #f8fafc; }
+            .card { border: 1px solid #cbd5e1; padding: 15px; border-radius: 6px; min-width: 150px; background: #f8fafc; }
             .card strong { display: block; font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }
             .card span { font-size: 18px; font-weight: bold; color: #0f172a; }
+            
+            /* Cores laterais para acompanhar a identidade da tela */
+            .card.finalizadas { border-left: 4px solid #a855f7; }
+            .card.aprovadas { border-left: 4px solid #22c55e; }
+            .card.compras { border-left: 4px solid #eab308; }
+            .card.pendentes { border-left: 4px solid #818cf8; }
+            .card.rejeitadas { border-left: 4px solid #ef4444; }
+
             table { width: 100%; border-collapse: collapse; margin-bottom: 30px; text-align: left; }
             th, td { border-bottom: 1px solid #e2e8f0; padding: 12px 8px; font-size: 14px; }
             th { background-color: #f1f5f9; font-weight: bold; color: #475569; text-transform: uppercase; font-size: 12px; }
@@ -97,15 +111,20 @@ export default function Relatorios() {
           <h1>Relatório de Compras</h1>
           <p><strong>Período:</strong> ${periodo} | <strong>Departamento:</strong> ${departamento}</p>
           
-          <h2>Resumo Geral</h2>
+          <h2>Resumo Financeiro</h2>
           <div class="grid-resumo">
             <div class="card"><strong>Total Finalizado</strong><span>${resumo.totalFinalizado}</span></div>
-            <div class="card"><strong>Pedidos Concluídos</strong><span>${resumo.pedidosConcluidos}</span></div>
+            <div class="card"><strong>Total de Solicitações</strong><span>${totalSolicitacoes}</span></div>
             <div class="card"><strong>Ticket Médio</strong><span>${resumo.ticketMedio}</span></div>
-            <div class="card"><strong>Pendentes</strong><span>${resumo.qtdPendentes}</span></div>
-            <div class="card"><strong>Aprovadas</strong><span>${resumo.qtdAprovados}</span></div>
-            <div class="card"><strong>Em Compras</strong><span>${resumo.qtdEmCompra}</span></div>
-            <div class="card"><strong>Rejeitadas</strong><span>${resumo.qtdRejeitadas}</span></div>
+          </div>
+
+          <h2>Status das Solicitações</h2>
+          <div class="grid-resumo">
+            <div class="card finalizadas"><strong>Finalizadas</strong><span>${resumo.pedidosConcluidos}</span></div>
+            <div class="card aprovadas"><strong>Aprovadas</strong><span>${resumo.qtdAprovados}</span></div>
+            <div class="card compras"><strong>Em Compras</strong><span>${resumo.qtdEmCompra}</span></div>
+            <div class="card pendentes"><strong>Pendentes</strong><span>${resumo.qtdPendentes}</span></div>
+            <div class="card rejeitadas"><strong>Rejeitadas</strong><span>${resumo.qtdRejeitadas}</span></div>
           </div>
 
           <h2>Gastos por Categoria - Solicitações Finalizadas</h2>
@@ -167,15 +186,15 @@ export default function Relatorios() {
       </div>
 
       {/* FILTROS */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+      <div className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <Filter size={18} className="text-slate-400" />
+          <Filter size={18} className="text-black" />
           <span className="text-sm font-semibold text-slate-700">Filtros:</span>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs">
-            <Calendar size={14} className="text-slate-400" />
+          <div className="flex items-center gap-2 bg-slate-50 border border-black rounded-lg px-3 py-1.5 text-xs">
+            <Calendar size={14} className="text-black" />
             <select
               value={periodo}
               onChange={(e) => setPeriodo(e.target.value)}
@@ -188,7 +207,7 @@ export default function Relatorios() {
             </select>
           </div>
 
-          <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs">
+          <div className="bg-slate-50 border border-black rounded-lg px-3 py-1.5 text-xs">
             <select
               value={departamento}
               onChange={(e) => setDepartamento(e.target.value)}
@@ -210,9 +229,9 @@ export default function Relatorios() {
         </div>
       ) : (
         <>
-          {/* CARDS RESUMO FINANCEIRO */}
+          {/* CARDS RESUMO FINANCEIRO - 3 colunas */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+            <div className="bg-white p-5 rounded-xl border border-indigo-500 shadow-sm space-y-2">
               <div className="flex items-center justify-between text-slate-500">
                 <span className="text-xs font-semibold uppercase">Total Finalizado</span>
                 <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
@@ -222,17 +241,18 @@ export default function Relatorios() {
               <p className="text-2xl font-bold text-slate-800">{resumo.totalFinalizado}</p>
             </div>
 
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+            {/* Total de Solicitações */}
+            <div className="bg-white p-5 rounded-xl border border-indigo-500 shadow-sm space-y-2">
               <div className="flex items-center justify-between text-slate-500">
-                <span className="text-xs font-semibold uppercase">Pedidos Concluídos</span>
-                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-                  <ShoppingCart size={18} />
+                <span className="text-xs font-semibold uppercase">Total de Solicitações</span>
+                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                  <ClipboardList size={18} />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-slate-800">{resumo.pedidosConcluidos} chamados</p>
+              <p className="text-2xl font-bold text-slate-800">{totalSolicitacoes} chamados</p>
             </div>
 
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+            <div className="bg-white p-5 rounded-xl border border-indigo-500 shadow-sm space-y-2">
               <div className="flex items-center justify-between text-slate-500">
                 <span className="text-xs font-semibold uppercase">Ticket Médio / Pedido</span>
                 <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
@@ -243,54 +263,71 @@ export default function Relatorios() {
             </div>
           </div>
 
-          {/* CARDS DE STATUS */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-              <div className="p-3 bg-slate-100 text-slate-600 rounded-full">
-                <Inbox size={24} />
+          {/* CARDS DE STATUS - 5 colunas */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            
+            {/* 1. FINALIZADAS (Roxo) */}
+            <div className="bg-white p-5 rounded-xl border border-purple-500 shadow-sm flex items-center gap-4">
+              <div className="p-3 bg-purple-100 text-purple-700 rounded-full">
+                <CheckCheck size={24} />
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase">Pendentes</p>
-                <p className="text-xl font-bold text-slate-800">{resumo.qtdPendentes} ped.</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase">Finalizadas</p>
+                <p className="text-xl font-bold text-slate-800">{resumo.pedidosConcluidos} Solicitações</p>
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+            {/* 2. APROVADAS (Verde) */}
+            <div className="bg-white p-5 rounded-xl border border-green-500 shadow-sm flex items-center gap-4">
               <div className="p-3 bg-emerald-100 text-emerald-700 rounded-full">
                 <CheckCircle size={24} />
               </div>
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase">Aprovadas</p>
-                <p className="text-xl font-bold text-slate-800">{resumo.qtdAprovados} ped.</p>
+                <p className="text-xl font-bold text-slate-800">{resumo.qtdAprovados} Solicitações</p>
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+            {/* 3. EM COMPRAS (Amarelo) */}
+            <div className="bg-white p-5 rounded-xl border border-yellow-500 shadow-sm flex items-center gap-4">
               <div className="p-3 bg-amber-100 text-amber-700 rounded-full">
                 <Clock size={24} />
               </div>
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase">Em Compras</p>
-                <p className="text-xl font-bold text-slate-800">{resumo.qtdEmCompra} ped.</p>
+                <p className="text-xl font-bold text-slate-800">{resumo.qtdEmCompra} Solicitações</p>
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+            {/* 4. PENDENTES (Slate/Azul Claro) */}
+            <div className="bg-white p-5 rounded-xl border border-indigo-300 shadow-sm flex items-center gap-4">
+              <div className="p-3 bg-slate-100 text-slate-600 rounded-full">
+                <Inbox size={24} />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase">Pendentes</p>
+                <p className="text-xl font-bold text-slate-800">{resumo.qtdPendentes} Solicitações</p>
+              </div>
+            </div>
+
+            {/* 5. REJEITADAS (Vermelho) */}
+            <div className="bg-white p-5 rounded-xl border border-red-500 shadow-sm flex items-center gap-4">
               <div className="p-3 bg-rose-100 text-rose-700 rounded-full">
                 <XCircle size={24} />
               </div>
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase">Rejeitadas</p>
-                <p className="text-xl font-bold text-slate-800">{resumo.qtdRejeitadas} ped.</p>
+                <p className="text-xl font-bold text-slate-800">{resumo.qtdRejeitadas} Solicitações</p>
               </div>
             </div>
+
           </div>
 
           {/* SESSÃO DIVIDIDA */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
             
             <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-              <div className="p-4 border-b border-slate-200 font-bold text-slate-800 text-sm flex items-center gap-2">
+              <div className="p-4 border-b border-indigo-500 font-bold text-slate-800 text-sm flex items-center gap-2">
                 <TrendingUp size={18} className="text-slate-400" />
                 Gastos por Categoria - Solicitações Finalizadas
               </div>
@@ -321,7 +358,7 @@ export default function Relatorios() {
             </div>
 
             <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-              <div className="p-4 border-b border-slate-200 font-bold text-slate-800 text-sm flex items-center gap-2">
+              <div className="p-4 border-b border-indigo-500 font-bold text-slate-800 text-sm flex items-center gap-2">
                 <Users size={18} className="text-slate-400" />
                 Top 5 Solicitantes
               </div>

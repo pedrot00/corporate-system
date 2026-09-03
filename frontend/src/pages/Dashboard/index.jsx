@@ -33,6 +33,19 @@ export default function Dashboard() {
       setLoading(true);
       const response = await api.get('/dashboard'); 
       if (response.data && response.data.kpis) {
+        
+        // 1. Criamos um mapa para o JavaScript saber quem vem primeiro
+        const ordemMeses = { 
+          'Jan': 1, 'Fev': 2, 'Mar': 3, 'Abr': 4, 'Mai': 5, 'Jun': 6, 
+          'Jul': 7, 'Ago': 8, 'Set': 9, 'Out': 10, 'Nov': 11, 'Dez': 12 
+        };
+
+        // 2. Forçamos a ordenação cronológica do array
+        if (response.data.evolucaoMensal) {
+          response.data.evolucaoMensal.sort((a, b) => ordemMeses[a.mes] - ordemMeses[b.mes]);
+        }
+
+        // 3. Salvamos no estado já ordenado
         setData(response.data);
       }
     } catch (error) {
@@ -138,7 +151,7 @@ export default function Dashboard() {
 
       {/* KPI CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <div className="bg-white p-5 rounded-xl border border-indigo-500 shadow-sm space-y-3">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg"><DollarSign size={20} /></div>
             <div>
@@ -150,7 +163,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <div className="bg-white p-5 rounded-xl border border-indigo-500 shadow-sm space-y-3">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg"><ClipboardList size={20} /></div>
             <div>
@@ -160,7 +173,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <div className="bg-white p-5 rounded-xl border border-indigo-500 shadow-sm space-y-3">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg"><Ticket size={20} /></div>
             <div>
@@ -172,7 +185,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <div className="bg-white p-5 rounded-xl border border-indigo-500 shadow-sm space-y-3">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-amber-50 text-amber-600 rounded-lg"><Percent size={20} /></div>
             <div>
@@ -182,7 +195,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <div className="bg-white p-5 rounded-xl border border-indigo-500 shadow-sm space-y-3">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-rose-50 text-rose-600 rounded-lg"><Clock size={20} /></div>
             <div>
@@ -195,7 +208,7 @@ export default function Dashboard() {
 
       {/* LINHA 1 DE GRÁFICOS */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-7 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="lg:col-span-7 bg-white p-6 rounded-xl border border-purple-500 shadow-sm flex flex-col justify-between">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-sm font-bold text-slate-800">Evolução dos Gastos (R$)</h2>
           </div>
@@ -218,7 +231,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="lg:col-span-5 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="lg:col-span-5 bg-white p-6 rounded-xl border border-purple-500 shadow-sm flex flex-col justify-between">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-sm font-bold text-slate-800">Solicitações por Status</h2>
           </div>
@@ -256,7 +269,7 @@ export default function Dashboard() {
 
       {/* LINHA 2: SAZONALIDADE E DEPARTAMENTOS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white p-6 rounded-xl border border-purple-500 shadow-sm">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-sm font-bold text-slate-800">Sazonalidade (Pedidos por Dia)</h2>
           </div>
@@ -273,7 +286,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white p-6 rounded-xl border border-purple-500 shadow-sm">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-sm font-bold text-slate-800">Gastos por Departamento (R$)</h2>
           </div>
@@ -292,37 +305,59 @@ export default function Dashboard() {
       </div>
 
       {/* LINHA 3: MAPA DE CALOR */}
-      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-        <h2 className="text-sm font-bold text-slate-800 mb-4">Mapa de Calor: Departamentos vs Categorias (Volumetria)</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+      <div className="w-full bg-white p-6 rounded-xl border border-purple-500 shadow-sm">
+        <h2 className="text-sm font-bold text-slate-800 mb-4">
+          Mapa de Calor: Departamentos vs Categorias (Volumetria)
+        </h2>
+
+        <div className="w-full overflow-x-auto">
+          <table className="w-full table-fixed text-sm text-left">
             <thead>
               <tr>
+                {/* Departamento */}
                 <th className="p-3 font-semibold text-slate-600 bg-slate-50 border-b border-slate-200 w-48">
                   Departamento
                 </th>
+
                 {data.mapaCalor.categorias.map(cat => (
-                  <th key={cat} className="p-3 font-semibold text-center text-slate-600 bg-slate-50 border-b border-slate-200">
+                  <th
+                    key={cat}
+                    className="p-3 font-semibold text-center text-slate-600 bg-slate-50 border-b border-slate-200"
+                  >
                     {cat}
                   </th>
                 ))}
               </tr>
             </thead>
+
             <tbody className="divide-y divide-slate-100">
               {data.mapaCalor.dados.map((linha, idx) => (
                 <tr key={idx}>
                   <td className="p-3 font-medium text-slate-700 bg-white border-r border-slate-100">
                     {linha.depto}
                   </td>
+
                   {data.mapaCalor.categorias.map(cat => {
                     const valor = linha[cat];
-                    const intensidade = maxHeatValue > 0 ? valor / maxHeatValue : 0;
+                    const intensidade =
+                      maxHeatValue > 0 ? valor / maxHeatValue : 0;
+
                     return (
                       <td key={cat} className="p-1 text-center">
-                        <div 
-                          className={`w-full h-10 flex items-center justify-center rounded transition-all font-semibold ${valor > 0 ? 'text-indigo-900' : 'text-slate-400'}`}
+                        <div
+                          className={`w-full h-10 flex items-center justify-center rounded transition-all font-semibold ${
+                            valor > 0
+                              ? 'text-indigo-900'
+                              : 'text-slate-400'
+                          }`}
                           style={{
-                            backgroundColor: valor > 0 ? `rgba(99, 102, 241, ${Math.max(0.1, intensidade)})` : '#F8FAFC'
+                            backgroundColor:
+                              valor > 0
+                                ? `rgba(99, 102, 241, ${Math.max(
+                                    0.1,
+                                    intensidade
+                                  )})`
+                                : '#F8FAFC'
                           }}
                         >
                           {valor > 0 ? valor : '-'}
@@ -332,9 +367,13 @@ export default function Dashboard() {
                   })}
                 </tr>
               ))}
+
               {data.mapaCalor.dados.length === 0 && (
                 <tr>
-                  <td colSpan={data.mapaCalor.categorias.length + 1} className="p-6 text-center text-slate-400">
+                  <td
+                    colSpan={data.mapaCalor.categorias.length + 1}
+                    className="p-6 text-center text-slate-400"
+                  >
                     Não há dados cruzados suficientes.
                   </td>
                 </tr>

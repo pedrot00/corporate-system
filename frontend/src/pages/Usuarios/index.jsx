@@ -1,23 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Search, Shield, Trash2 } from 'lucide-react';
-import { api } from '../../services/api'; // Import da conexão com o backend
+import { UserPlus, Search, Shield, Trash2, Lock, AlertTriangle } from 'lucide-react';
+import { api } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function Usuarios() {
+  const { usuario: adminLogado } = useAuth();
   const [usuarios, setUsuarios] = useState([]);
   const [busca, setBusca] = useState('');
   const [loading, setLoading] = useState(true);
   
-  // Modal e form states
+  // Modal de cadastro
   const [modalAberto, setModalAberto] = useState(false);
   const [novoUsuario, setNovoUsuario] = useState({
     nome: '',
     email: '',
-    senha: '', // Necessário para o banco real
-    departamento: 'TI', // Atualizado de 'depto'
-    perfil: 'FUNCIONARIO' // Atualizado de 'papel'
+    senha: '',
+    departamento: 'TI',
+    perfil: 'FUNCIONARIO'
   });
 
-  // 1. Buscar os usuários do Banco de Dados
+  // Modal de exclusão com senha
+  const [usuarioParaExcluir, setUsuarioParaExcluir] = useState(null);
+  const [senhaConfirmacao, setSenhaConfirmacao] = useState('');
+  const [erroExclusao, setErroExclusao] = useState('');
+  const [excluindo, setExcluindo] = useState(false);
+
   const carregarUsuarios = async () => {
     try {
       setLoading(true);
@@ -25,7 +32,6 @@ export default function Usuarios() {
       setUsuarios(response.data);
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);
-      // Se a rota ainda não existir, evita que a tela quebre
     } finally {
       setLoading(false);
     }
@@ -35,35 +41,59 @@ export default function Usuarios() {
     carregarUsuarios();
   }, []);
 
-  // 2. Excluir usuário no Banco de Dados
-  const excluirUsuario = async (id) => {
-    if (!window.confirm("Tem certeza que deseja excluir este usuário?")) return;
-    
+  // Inicia o fluxo de exclusão
+  const handleIniciarExclusao = (usuarioAlvo) => {
+    if (usuarioAlvo.id === adminLogado?.id) {
+      alert("Você não pode excluir sua própria conta de Administrador.");
+      return;
+    }
+    setUsuarioParaExcluir(usuarioAlvo);
+    setSenhaConfirmacao('');
+    setErroExclusao('');
+  };
+
+  // Confirma a exclusão enviando a senha ao backend
+  const handleConfirmarExclusao = async (e) => {
+    e.preventDefault();
+    if (!senhaConfirmacao) {
+      setErroExclusao('Digite sua senha para confirmar.');
+      return;
+    }
+
     try {
-      await api.delete(`/usuarios/${id}`);
-      setUsuarios(prev => prev.filter(user => user.id !== id));
+      setExcluindo(true);
+      setErroExclusao('');
+
+      await api.delete(`/usuarios/${usuarioParaExcluir.id}`, {
+        data: { 
+          senhaAdmin: senhaConfirmacao,
+          adminId: adminLogado?.id 
+        }
+      });
+
+      setUsuarios(prev => prev.filter(user => user.id !== usuarioParaExcluir.id));
+      setUsuarioParaExcluir(null);
     } catch (error) {
       console.error('Erro ao excluir usuário:', error);
-      alert('Não foi possível excluir o usuário. Verifique se ele possui solicitações atreladas.');
+      setErroExclusao(error.response?.data?.erro || 'Senha incorreta ou erro ao excluir.');
+    } finally {
+      setExcluindo(false);
     }
   };
 
-  // 3. Criar usuário no Banco de Dados
   const handleCriarUsuario = async (e) => {
     e.preventDefault();
     try {
       await api.post('/usuarios', novoUsuario);
-      
       setModalAberto(false);
       setNovoUsuario({ nome: '', email: '', senha: '', departamento: 'TI', perfil: 'FUNCIONARIO' });
-      carregarUsuarios(); // Recarrega a lista para pegar o ID real gerado pelo banco
+      carregarUsuarios();
     } catch (error) {
       console.error('Erro ao criar usuário:', error);
       alert('Erro ao criar usuário. Verifique se o e-mail já está em uso.');
     }
   };
 
-  // Atualizado para usar u.departamento
   const usuariosFiltrados = usuarios.filter(u => 
     u.nome.toLowerCase().includes(busca.toLowerCase()) || 
     u.email.toLowerCase().includes(busca.toLowerCase()) ||
@@ -71,9 +101,9 @@ export default function Usuarios() {
   );
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-8 max-w-7xl mx-auto space-y-6 ">
       
-      {/* CABEÇALHO DA PÁGINA */}
+      {/* CABEÇALHO */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Gestão de Usuários</h1>
@@ -88,8 +118,8 @@ export default function Usuarios() {
         </button>
       </div>
 
-      {/* BARRA DE FILTRO */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+      {/* BUSCA */}
+      <div className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm">
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
           <input
@@ -97,7 +127,7 @@ export default function Usuarios() {
             placeholder="Buscar por nome, e-mail ou departamento..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-black rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
       </div>
@@ -124,43 +154,117 @@ export default function Usuarios() {
                   </td>
                 </tr>
               ) : (
-                usuariosFiltrados.map((u) => (
-                  <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="p-4">
-                      <div className="font-semibold text-slate-800">{u.nome}</div>
-                      <div className="text-xs text-slate-400">{u.email}</div>
-                    </td>
-                    <td className="p-4 text-slate-600 font-medium">{u.departamento}</td>
-                    <td className="p-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold ${
-                        u.perfil === 'ADMIN' 
-                          ? 'bg-purple-50 text-purple-700 border border-purple-200' 
-                          : u.perfil === 'GESTOR' 
-                          ? 'bg-blue-50 text-blue-700 border border-blue-200' 
-                          : 'bg-slate-100 text-slate-700 border border-slate-200'
-                      }`}>
-                        <Shield size={12} />
-                        {u.perfil}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right">
-                      <button
-                        onClick={() => excluirUsuario(u.id)}
-                        title="Excluir Usuário"
-                        className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                usuariosFiltrados.map((u) => {
+                  const eProprioUsuario = u.id === adminLogado?.id;
+                  return (
+                    <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="p-4">
+                        <div className="font-semibold text-slate-800 flex items-center gap-2">
+                          {u.nome}
+                          {eProprioUsuario && (
+                            <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-bold">
+                              Você
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-slate-400">{u.email}</div>
+                      </td>
+                      <td className="p-4 text-slate-600 font-medium">{u.departamento}</td>
+                      <td className="p-4">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold ${
+                          u.perfil === 'ADMIN' 
+                            ? 'bg-purple-50 text-purple-700 border border-purple-200' 
+                            : u.perfil === 'GESTOR' 
+                            ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                            : 'bg-slate-100 text-emerald-700 border border-emerald-200'
+                        }`}>
+                          <Shield size={12} />
+                          {u.perfil}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right">
+                        <button
+                          onClick={() => handleIniciarExclusao(u)}
+                          disabled={eProprioUsuario}
+                          title={eProprioUsuario ? "Você não pode excluir sua própria conta" : "Excluir Usuário"}
+                          className={`p-1.5 rounded-lg border transition-colors ${
+                            eProprioUsuario 
+                              ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-slate-50' 
+                              : 'border-slate-200 text-slate-400 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200'
+                          }`}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         )}
       </div>
 
-      {/* MODAL DE CADASTRO */}
+      {/* MODAL DE CONFIRMAÇÃO COM SENHA */}
+      {usuarioParaExcluir && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="p-2 bg-rose-50 rounded-lg">
+                <AlertTriangle size={24} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">Confirmar Exclusão</h2>
+                <p className="text-xs text-slate-500">Ação irreversível</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-slate-600">
+              Para excluir a conta de <strong className="text-slate-800">{usuarioParaExcluir.nome}</strong> ({usuarioParaExcluir.email}), confirme com a sua senha de administrador:
+            </p>
+
+            <form onSubmit={handleConfirmarExclusao} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Sua Senha</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-2.5 text-slate-400" size={16} />
+                  <input
+                    type="password"
+                    required
+                    autoFocus
+                    placeholder="Digite sua senha..."
+                    value={senhaConfirmacao}
+                    onChange={(e) => setSenhaConfirmacao(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  />
+                </div>
+                {erroExclusao && (
+                  <p className="text-xs font-medium text-rose-600 mt-1.5">{erroExclusao}</p>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setUsuarioParaExcluir(null)}
+                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={excluindo}
+                  className="px-4 py-2 text-sm font-medium bg-rose-600 hover:bg-rose-700 text-white rounded-lg transition-colors shadow-sm disabled:opacity-50"
+                >
+                  {excluindo ? 'Validando...' : 'Excluir Usuário'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CADASTRO DE NOVO USUÁRIO */}
       {modalAberto && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl">

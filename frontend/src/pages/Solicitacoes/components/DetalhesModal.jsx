@@ -5,10 +5,11 @@ export default function DetalhesModal({ item, onClose, onAtualizarEstado, usuari
   const [observacao, setObservacao] = useState('');
   if (!item) return null;
 
-  // Ajustado para usar .perfil e .solicitanteId baseados no BD
-  const podeAprovarRejeitar = ['PENDENTE', 'SOLICITACAO_REENVIADA'].includes(item.estado) && ['GESTOR', 'ADMIN'].includes(usuario?.perfil);
-  const podeIniciarCompra = item.estado === 'APROVADA' && ['COMPRAS', 'ADMIN'].includes(usuario?.perfil);
-  const podeFinalizar = item.estado === 'EM_COMPRA' && ['COMPRAS', 'ADMIN'].includes(usuario?.perfil);
+  const nivelAcesso = usuario?.papel || usuario?.perfil;
+
+  const podeAprovarRejeitar = ['PENDENTE', 'SOLICITACAO_REENVIADA'].includes(item.estado) && ['GESTOR', 'ADMIN'].includes(nivelAcesso);
+  const podeIniciarCompra = item.estado === 'APROVADA' && ['GESTOR', 'ADMIN'].includes(nivelAcesso);
+  const podeFinalizar = item.estado === 'EM_COMPRA' && ['GESTOR', 'ADMIN'].includes(nivelAcesso);
   const podeReenviar = item.estado === 'REJEITADA' && (apenasMinhas || item.solicitanteId === usuario?.id);
 
   const handleAcao = (novoEstado, defaultObs) => {
