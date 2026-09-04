@@ -19,7 +19,6 @@ export default function Login() {
     try {
       const usuarioLogado = await login(emailLogin, senhaLogin);
       
-      // Redirecionamento condicional por perfil de acesso
       if (usuarioLogado?.perfil === 'FUNCIONARIO') {
         navigate('/minhas-solicitacoes');
       } else {
@@ -39,7 +38,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-md rounded-2xl shadow-xl p-8 space-y-6">
+      <div className="bg-white w-full max-w-md rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
         
         <div className="text-center space-y-2">
           <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center font-bold text-white text-xl mx-auto shadow-lg shadow-indigo-200">
@@ -101,25 +100,25 @@ export default function Login() {
           <p className="text-xs font-medium text-slate-400 text-center flex items-center justify-center gap-1">
             <UserCheck size={14} /> Atalhos para teste do portfólio:
           </p>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <button
               type="button"
               onClick={() => realizarLogin('joao@empresa.com', '123456')}
-              className="px-2 py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 rounded text-xs font-medium transition-colors"
+              className="w-full px-2 py-2 sm:py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 rounded-lg sm:rounded text-xs font-medium transition-colors"
             >
               Funcionário
             </button>
             <button
               type="button"
               onClick={() => realizarLogin('gestor@empresa.com', '123456')}
-              className="px-2 py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 rounded text-xs font-medium transition-colors"
+              className="w-full px-2 py-2 sm:py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 rounded-lg sm:rounded text-xs font-medium transition-colors"
             >
               Gestor
             </button>
             <button
               type="button"
               onClick={() => realizarLogin('admin@empresa.com', '123456')}
-              className="px-2 py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 rounded text-xs font-medium transition-colors"
+              className="w-full px-2 py-2 sm:py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 rounded-lg sm:rounded text-xs font-medium transition-colors"
             >
               Admin
             </button>

@@ -1,18 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, UserCheck, BarChart2, Users, LogOut } from 'lucide-react';
+import { LayoutDashboard, FileText, UserCheck, BarChart2, Users, LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function Layout({ children }) {
   const { usuario, logout } = useAuth();
   const navigate = useNavigate();
+  const [menuAberto, setMenuAberto] = useState(false);
 
   const handleSair = () => {
     logout();
     navigate('/login');
   };
 
-  // NOVA ORDEM DAS ABAS
+  const fecharMenu = () => setMenuAberto(false);
+
   const menuItens = [
     {
       titulo: 'Dashboard',
@@ -50,21 +52,49 @@ export default function Layout({ children }) {
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC]">
-      {/* Removemos o justify-between para os itens fluírem de cima para baixo naturalmente */}
-      <aside className="w-64 bg-white border-r border-black-200 p-6 flex flex-col shrink-0 overflow-y-auto">
+      
+      {/* HEADER MOBILE */}
+      <header className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 z-20 flex items-center justify-between px-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white text-sm">
+            C
+          </div>
+          <span className="font-bold text-slate-800 text-lg">Companio</span>
+        </div>
+        <button 
+          onClick={() => setMenuAberto(!menuAberto)} 
+          className="text-slate-600 p-2 hover:bg-slate-100 rounded-lg transition-colors"
+        >
+          {menuAberto ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </header>
+
+      {/* OVERLAY */}
+      {menuAberto && (
+        <div 
+          className="md:hidden fixed inset-0 bg-slate-900/50 z-30" 
+          onClick={fecharMenu}
+        />
+      )}
+
+      {/* SIDEBAR (Barra lateral) */}
+      <aside className={`
+        fixed md:static inset-y-0 left-0 z-40 w-64 bg-white border-r border-slate-200 p-6 flex flex-col shrink-0 overflow-y-auto transition-transform duration-300 ease-in-out
+        ${menuAberto ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
         
         {/* LOGO */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="hidden md:flex items-center gap-3 mb-6">
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white text-sm">
             C
           </div>
           <span className="font-bold text-slate-800 text-lg">Companio</span>
         </div>
 
-        {/* PERFIL DO USUÁRIO NO TOPO (MOVIDO DO RODAPÉ) */}
+        {/* PERFIL DO USUÁRIO */}
         {usuario && (
-          <div className="mb-6 pb-6 border-b border-slate-100  ">
-            <div className="bg-slate-50 p-3 rounded-xl border border-indigo-300 flex items-center justify-between shadow-sm  border border-[#716ad8]">
+          <div className="mb-6 pb-6 border-b border-slate-100">
+            <div className="bg-slate-50 p-3 rounded-xl border border-indigo-300 flex items-center justify-between shadow-sm border border-[#716ad8]">
               <div>
                 <p className="text-xs font-bold text-slate-800">{usuario.nome}</p>
                 <p className="text-[11px] text-slate-500 capitalize">{usuario?.perfil?.toLowerCase()}</p>
@@ -88,6 +118,7 @@ export default function Layout({ children }) {
               <NavLink
                 key={item.rota}
                 to={item.rota}
+                onClick={fecharMenu}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     isActive
@@ -104,7 +135,8 @@ export default function Layout({ children }) {
         </nav>
       </aside>
 
-      <main className="flex-1 overflow-y-auto">
+      {/* CONTEÚDO PRINCIPAL */}
+      <main className="flex-1 overflow-y-auto pt-16 md:pt-0">
         {children}
       </main>
     </div>

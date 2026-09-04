@@ -20,12 +20,12 @@ export default function DetalhesModal({ item, onClose, onAtualizarEstado, usuari
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl w-full max-w-2xl p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-2xl p-4 sm:p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
         
         {/* CABEÇALHO */}
-        <div className="flex justify-between items-start border-b border-slate-100 pb-3">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 border-b border-slate-100 pb-3">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg font-bold text-slate-800">{item.titulo}</h2>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
                 item.prioridade === 'ALTA' ? 'bg-rose-100 text-rose-700' :
@@ -34,10 +34,10 @@ export default function DetalhesModal({ item, onClose, onAtualizarEstado, usuari
                 {item.prioridade}
               </span>
             </div>
-            <p className="text-xs text-slate-400">ID #{item.id} • Criado em {new Date(item.criadoEm).toLocaleDateString('pt-BR')}</p>
+            <p className="text-xs text-slate-400 mt-1">ID #{item.id} • Criado em {new Date(item.criadoEm).toLocaleDateString('pt-BR')}</p>
           </div>
 
-          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold self-start ${
             item.estado === 'APROVADA' ? 'bg-emerald-100 text-emerald-800' :
             item.estado === 'REJEITADA' ? 'bg-rose-100 text-rose-800' :
             item.estado === 'EM_COMPRA' ? 'bg-blue-100 text-blue-800' :
@@ -47,29 +47,28 @@ export default function DetalhesModal({ item, onClose, onAtualizarEstado, usuari
           </span>
         </div>
 
-        {/* DETALHES */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-slate-50 p-4 rounded-xl border border-slate-100">
           <div>
-            <span className="text-[10px] font-semibold text-slate-400 uppercase">Solicitante</span>
-            <p className="font-semibold text-slate-700">{item.solicitante?.nome}</p>
+            <span className="text-[10px] font-semibold text-slate-400 uppercase break-words">Solicitante</span>
+            <p className="font-semibold text-slate-700 truncate" title={item.solicitante?.nome}>{item.solicitante?.nome}</p>
           </div>
           <div>
-            <span className="text-[10px] font-semibold text-slate-400 uppercase">Departamento</span>
-            <p className="font-semibold text-slate-700">{item.departamento}</p>
+            <span className="text-[10px] font-semibold text-slate-400 uppercase break-words">Departamento</span>
+            <p className="font-semibold text-slate-700 truncate" title={item.departamento}>{item.departamento}</p>
           </div>
           <div>
-            <span className="text-[10px] font-semibold text-slate-400 uppercase">Categoria</span>
-            <p className="font-semibold text-slate-700">{item.categoria}</p>
+            <span className="text-[10px] font-semibold text-slate-400 uppercase break-words">Categoria</span>
+            <p className="font-semibold text-slate-700 truncate" title={item.categoria}>{item.categoria}</p>
           </div>
           <div>
-            <span className="text-[10px] font-semibold text-slate-400 uppercase">Valor Estimado</span>
-            <p className="font-bold text-slate-800">R$ {Number(item.valorEstimado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            <span className="text-[10px] font-semibold text-slate-400 uppercase break-words">Valor Est.</span>
+            <p className="font-bold text-slate-800 truncate">R$ {Number(item.valorEstimado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
           </div>
         </div>
 
         <div>
           <span className="text-xs font-semibold text-slate-500">Descrição</span>
-          <p className="text-sm text-slate-700 mt-1 bg-white p-3 border border-slate-200 rounded-lg">{item.descricao}</p>
+          <p className="text-sm text-slate-700 mt-1 bg-white p-3 border border-slate-200 rounded-lg whitespace-pre-wrap">{item.descricao}</p>
         </div>
 
         {/* TRANSIÇÕES DE ESTADO */}
@@ -104,40 +103,43 @@ export default function DetalhesModal({ item, onClose, onAtualizarEstado, usuari
                 {h.observacao && <p className="text-slate-500 italic">"{h.observacao}"</p>}
               </div>
             ))}
+            {(!item.historico || item.historico.length === 0) && (
+              <p className="text-xs text-slate-400 italic">Nenhum histórico encontrado.</p>
+            )}
           </div>
         </div>
 
-        {/* AÇÕES DINÂMICAS CONFORME O ESTADO */}
-        <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
-          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+        {/* AÇÕES DINÂMICAS - flex-wrap adicionado para não quebrar layout no mobile */}
+        <div className="flex flex-wrap justify-end gap-2 pt-4 border-t border-slate-100">
+          <button onClick={onClose} className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
             Fechar
           </button>
 
           {podeReenviar && (
-            <button onClick={() => handleAcao('SOLICITACAO_REENVIADA', 'Solicitação reenviada pelo solicitante.')} className="px-4 py-2 text-sm font-medium bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
-              <RefreshCw size={14} /> Reenviar Solicitação
+            <button onClick={() => handleAcao('SOLICITACAO_REENVIADA', 'Solicitação reenviada pelo solicitante.')} className="w-full sm:w-auto px-4 py-2 text-sm font-medium bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+              <RefreshCw size={14} /> Reenviar
             </button>
           )}
 
           {podeAprovarRejeitar && (
             <>
-              <button onClick={() => handleAcao('REJEITADA', 'Solicitação rejeitada pelo gestor.')} className="px-4 py-2 text-sm font-medium bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg transition-colors">
+              <button onClick={() => handleAcao('REJEITADA', 'Solicitação rejeitada pelo gestor.')} className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg transition-colors text-center">
                 Rejeitar
               </button>
-              <button onClick={() => handleAcao('APROVADA', 'Solicitação aprovada pelo gestor.')} className="px-4 py-2 text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors shadow-sm">
+              <button onClick={() => handleAcao('APROVADA', 'Solicitação aprovada pelo gestor.')} className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors shadow-sm text-center">
                 Aprovar
               </button>
             </>
           )}
 
           {podeIniciarCompra && (
-            <button onClick={() => handleAcao('EM_COMPRA', 'Processo de compra iniciado.')} className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+            <button onClick={() => handleAcao('EM_COMPRA', 'Processo de compra iniciado.')} className="w-full sm:w-auto px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm">
               <ShoppingCart size={14} /> Mover para "Em Compra"
             </button>
           )}
 
           {podeFinalizar && (
-            <button onClick={() => handleAcao('FINALIZADA', 'Compra concluída e entregue.')} className="px-4 py-2 text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+            <button onClick={() => handleAcao('FINALIZADA', 'Compra concluída e entregue.')} className="w-full sm:w-auto px-4 py-2 text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm">
               <CheckCheck size={14} /> Finalizar Pedido
             </button>
           )}

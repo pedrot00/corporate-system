@@ -39,7 +39,6 @@ export default function Relatorios() {
 
   const totalSolicitacoes = resumo.pedidosConcluidos + resumo.qtdAprovados + resumo.qtdEmCompra + resumo.qtdPendentes + resumo.qtdRejeitadas;
 
-  // --- CORREÇÃO DO CSV ---
   const exportarCSV = () => {
     if (!resumo) return alert('Não há dados para exportar.');
     
@@ -77,7 +76,6 @@ export default function Relatorios() {
     document.body.removeChild(link);
   };
 
-  // --- CORREÇÃO DO PDF ---
   const exportarPDF = () => {
     const janelaPDF = window.open('', '_blank');
     
@@ -94,7 +92,6 @@ export default function Relatorios() {
             .card strong { display: block; font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }
             .card span { font-size: 18px; font-weight: bold; color: #0f172a; }
             
-            /* Cores laterais para acompanhar a identidade da tela */
             .card.finalizadas { border-left: 4px solid #a855f7; }
             .card.aprovadas { border-left: 4px solid #22c55e; }
             .card.compras { border-left: 4px solid #eab308; }
@@ -158,7 +155,7 @@ export default function Relatorios() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
       
       {/* CABEÇALHO */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -167,17 +164,17 @@ export default function Relatorios() {
           <p className="text-sm text-slate-500">Acompanhe métricas financeiras e volume de compras</p>
         </div>
         
-        <div className="flex items-center gap-3 self-start md:self-auto">
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
           <button
             onClick={exportarCSV}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm"
+            className="w-full sm:w-auto justify-center bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm"
           >
             <FileSpreadsheet size={18} />
             Exportar CSV
           </button>
           <button
             onClick={exportarPDF}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm"
+            className="w-full sm:w-auto justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm"
           >
             <Download size={18} />
             Exportar PDF
@@ -186,19 +183,20 @@ export default function Relatorios() {
       </div>
 
       {/* FILTROS */}
-      <div className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div className="flex items-center gap-3 w-full md:w-auto">
+      <div className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+        <div className="flex items-center gap-3">
           <Filter size={18} className="text-black" />
           <span className="text-sm font-semibold text-slate-700">Filtros:</span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-2 bg-slate-50 border border-black rounded-lg px-3 py-1.5 text-xs">
-            <Calendar size={14} className="text-black" />
+        {/* Ajuste nos filtros para empilharem se necessário em telas menores */}
+        <div className="flex flex-col sm:flex-row w-full md:w-auto gap-3">
+          <div className="flex items-center gap-2 bg-slate-50 border border-black rounded-lg px-3 py-2 sm:py-1.5 text-xs w-full sm:w-auto">
+            <Calendar size={14} className="text-black shrink-0" />
             <select
               value={periodo}
               onChange={(e) => setPeriodo(e.target.value)}
-              className="bg-transparent text-slate-700 font-medium focus:outline-none cursor-pointer"
+              className="bg-transparent text-slate-700 font-medium focus:outline-none cursor-pointer w-full"
             >
               <option value="7dias">Últimos 7 dias</option>
               <option value="30dias">Últimos 30 dias</option>
@@ -207,11 +205,11 @@ export default function Relatorios() {
             </select>
           </div>
 
-          <div className="bg-slate-50 border border-black rounded-lg px-3 py-1.5 text-xs">
+          <div className="bg-slate-50 border border-black rounded-lg px-3 py-2 sm:py-1.5 text-xs w-full sm:w-auto">
             <select
               value={departamento}
               onChange={(e) => setDepartamento(e.target.value)}
-              className="bg-transparent text-slate-700 font-medium focus:outline-none cursor-pointer"
+              className="bg-transparent text-slate-700 font-medium focus:outline-none cursor-pointer w-full"
             >
               <option value="TODOS">Todos os Departamentos</option>
               <option value="TI">TI</option>
@@ -229,7 +227,7 @@ export default function Relatorios() {
         </div>
       ) : (
         <>
-          {/* CARDS RESUMO FINANCEIRO - 3 colunas */}
+          {/* CARDS RESUMO FINANCEIRO - Mantivemos a grid que vai de 1 para 3 colunas */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-white p-5 rounded-xl border border-indigo-500 shadow-sm space-y-2">
               <div className="flex items-center justify-between text-slate-500">
@@ -241,7 +239,6 @@ export default function Relatorios() {
               <p className="text-2xl font-bold text-slate-800">{resumo.totalFinalizado}</p>
             </div>
 
-            {/* Total de Solicitações */}
             <div className="bg-white p-5 rounded-xl border border-indigo-500 shadow-sm space-y-2">
               <div className="flex items-center justify-between text-slate-500">
                 <span className="text-xs font-semibold uppercase">Total de Solicitações</span>
@@ -263,134 +260,143 @@ export default function Relatorios() {
             </div>
           </div>
 
-          {/* CARDS DE STATUS - 5 colunas */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          {/* CARDS DE STATUS - Grid de 1 para 5 colunas */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
             
-            {/* 1. FINALIZADAS (Roxo) */}
             <div className="bg-white p-5 rounded-xl border border-purple-500 shadow-sm flex items-center gap-4">
               <div className="p-3 bg-purple-100 text-purple-700 rounded-full">
                 <CheckCheck size={24} />
               </div>
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase">Finalizadas</p>
-                <p className="text-xl font-bold text-slate-800">{resumo.pedidosConcluidos} Solicitações</p>
+                <p className="text-xl font-bold text-slate-800">{resumo.pedidosConcluidos} Solicit.</p>
               </div>
             </div>
 
-            {/* 2. APROVADAS (Verde) */}
             <div className="bg-white p-5 rounded-xl border border-green-500 shadow-sm flex items-center gap-4">
               <div className="p-3 bg-emerald-100 text-emerald-700 rounded-full">
                 <CheckCircle size={24} />
               </div>
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase">Aprovadas</p>
-                <p className="text-xl font-bold text-slate-800">{resumo.qtdAprovados} Solicitações</p>
+                <p className="text-xl font-bold text-slate-800">{resumo.qtdAprovados} Solicit.</p>
               </div>
             </div>
 
-            {/* 3. EM COMPRAS (Amarelo) */}
             <div className="bg-white p-5 rounded-xl border border-yellow-500 shadow-sm flex items-center gap-4">
               <div className="p-3 bg-amber-100 text-amber-700 rounded-full">
                 <Clock size={24} />
               </div>
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase">Em Compras</p>
-                <p className="text-xl font-bold text-slate-800">{resumo.qtdEmCompra} Solicitações</p>
+                <p className="text-xl font-bold text-slate-800">{resumo.qtdEmCompra} Solicit.</p>
               </div>
             </div>
 
-            {/* 4. PENDENTES (Slate/Azul Claro) */}
             <div className="bg-white p-5 rounded-xl border border-indigo-300 shadow-sm flex items-center gap-4">
               <div className="p-3 bg-slate-100 text-slate-600 rounded-full">
                 <Inbox size={24} />
               </div>
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase">Pendentes</p>
-                <p className="text-xl font-bold text-slate-800">{resumo.qtdPendentes} Solicitações</p>
+                <p className="text-xl font-bold text-slate-800">{resumo.qtdPendentes} Solicit.</p>
               </div>
             </div>
 
-            {/* 5. REJEITADAS (Vermelho) */}
             <div className="bg-white p-5 rounded-xl border border-red-500 shadow-sm flex items-center gap-4">
               <div className="p-3 bg-rose-100 text-rose-700 rounded-full">
                 <XCircle size={24} />
               </div>
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase">Rejeitadas</p>
-                <p className="text-xl font-bold text-slate-800">{resumo.qtdRejeitadas} Solicitações</p>
+                <p className="text-xl font-bold text-slate-800">{resumo.qtdRejeitadas} Solicit.</p>
               </div>
             </div>
 
           </div>
 
-          {/* SESSÃO DIVIDIDA */}
+          {/* SESSÃO DIVIDIDA DE TABELAS */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
             
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-              <div className="p-4 border-b border-indigo-500 font-bold text-slate-800 text-sm flex items-center gap-2">
-                <TrendingUp size={18} className="text-slate-400" />
-                Gastos por Categoria - Solicitações Finalizadas
+            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
+              <div className="p-4 border-b border-indigo-500 font-bold text-slate-800 text-sm flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <TrendingUp size={18} className="text-slate-400" />
+                  Gastos por Categoria
+                </div>
+                <span className="text-[10px] text-slate-500 bg-slate-100 px-2 py-1 rounded md:hidden">Deslize ↔</span>
               </div>
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-500 border-b border-slate-200">
-                  <tr>
-                    <th className="p-4">Categoria</th>
-                    <th className="p-4 text-center">Qtd</th>
-                    <th className="p-4 text-right">Valor Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {dados.length > 0 ? (
-                    dados.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="p-4 font-semibold text-slate-800">{item.categoria}</td>
-                        <td className="p-4 text-center text-slate-600">{item.quantidade}</td>
-                        <td className="p-4 text-right font-bold text-slate-800">{item.total}</td>
-                      </tr>
-                    ))
-                  ) : (
+              
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm text-slate-600 min-w-[400px]">
+                  <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-500 border-b border-slate-200">
                     <tr>
-                      <td colSpan="3" className="p-8 text-center text-slate-500">Nenhum dado encontrado.</td>
+                      <th className="p-4">Categoria</th>
+                      <th className="p-4 text-center">Qtd</th>
+                      <th className="p-4 text-right">Valor Total</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {dados.length > 0 ? (
+                      dados.map((item, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="p-4 font-semibold text-slate-800 truncate">{item.categoria}</td>
+                          <td className="p-4 text-center text-slate-600">{item.quantidade}</td>
+                          <td className="p-4 text-right font-bold text-slate-800 whitespace-nowrap">{item.total}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="3" className="p-8 text-center text-slate-500">Nenhum dado encontrado.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-              <div className="p-4 border-b border-indigo-500 font-bold text-slate-800 text-sm flex items-center gap-2">
-                <Users size={18} className="text-slate-400" />
-                Top 5 Solicitantes
+            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
+              <div className="p-4 border-b border-indigo-500 font-bold text-slate-800 text-sm flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Users size={18} className="text-slate-400" />
+                  Top 5 Solicitantes
+                </div>
+                {/* Dica visual de scroll horizontal apenas para o mobile */}
+                <span className="text-[10px] text-slate-500 bg-slate-100 px-2 py-1 rounded md:hidden">Deslize ↔</span>
               </div>
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-500 border-b border-slate-200">
-                  <tr>
-                    <th className="p-4">Colaborador</th>
-                    <th className="p-4 text-center">Pedidos</th>
-                    <th className="p-4 text-right">Valor Solicitado</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {topSolicitantes.length > 0 ? (
-                    topSolicitantes.map((user, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="p-4 font-semibold text-slate-800 flex items-center gap-2">
-                          <span className="w-5 h-5 flex items-center justify-center bg-slate-100 rounded-full text-xs font-bold text-slate-500">
-                            {idx + 1}
-                          </span>
-                          {user.nome}
-                        </td>
-                        <td className="p-4 text-center text-slate-600">{user.quantidade}</td>
-                        <td className="p-4 text-right font-bold text-slate-800">{user.total}</td>
-                      </tr>
-                    ))
-                  ) : (
+              
+              {/* Contêiner de overflow para tabelas */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm text-slate-600 min-w-[400px]">
+                  <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-500 border-b border-slate-200">
                     <tr>
-                      <td colSpan="3" className="p-8 text-center text-slate-500">Nenhuma solicitação encontrada.</td>
+                      <th className="p-4">Colaborador</th>
+                      <th className="p-4 text-center">Pedidos</th>
+                      <th className="p-4 text-right">Valor Solicitado</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {topSolicitantes.length > 0 ? (
+                      topSolicitantes.map((user, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="p-4 font-semibold text-slate-800 flex items-center gap-2 min-w-[150px]">
+                            <span className="w-5 h-5 flex items-center justify-center bg-slate-100 rounded-full text-xs font-bold text-slate-500 shrink-0">
+                              {idx + 1}
+                            </span>
+                            <span className="truncate">{user.nome}</span>
+                          </td>
+                          <td className="p-4 text-center text-slate-600">{user.quantidade}</td>
+                          <td className="p-4 text-right font-bold text-slate-800 whitespace-nowrap">{user.total}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="3" className="p-8 text-center text-slate-500">Nenhuma solicitação encontrada.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
           </div>

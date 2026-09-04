@@ -5,7 +5,7 @@ export default function NovaSolicitacaoModal({ aberto, onClose, onCriar, usuario
     titulo: '',
     descricao: '',
     categoria: 'Equipamentos de TI',
-    departamento: usuario?.departamento || 'TI', // Modificado para .departamento
+    departamento: usuario?.departamento || 'TI', 
     prioridade: 'MEDIA',
     valorEstimado: '',
   });
@@ -15,24 +15,20 @@ export default function NovaSolicitacaoModal({ aberto, onClose, onCriar, usuario
 const handleSubmit = (e) => {
     e.preventDefault();
 
-    // 1. Limpa a formatação visual (remove pontos e troca a vírgula por ponto)
-    // Usamos String() por segurança, para garantir que o replace não falhe
     const valorString = String(formData.valorEstimado || "0");
     const valorLimpo = valorString.replace(/\./g, '').replace(',', '.');
     const valorNumerico = parseFloat(valorLimpo);
 
-    // 2. Envia os dados para a API
     onCriar({
       ...formData,
-      valorEstimado: valorNumerico // Agora vai limpinho, ex: 1234.56
+      valorEstimado: valorNumerico 
     });
     
-    // 3. Reseta o formulário
     setFormData({
       titulo: '',
       descricao: '',
       categoria: 'Equipamentos de TI',
-      departamento: '', // Deixei vazio para forçar o usuário a escolher naquele <select> novo
+      departamento: '',
       prioridade: 'MEDIA',
       valorEstimado: '',
     });
@@ -42,10 +38,8 @@ const handleSubmit = (e) => {
   const handleValorChange = (e) => {
     let valor = e.target.value;
     
-    // Remove tudo que não for número
     valor = valor.replace(/\D/g, "");
     
-    // Formata para moeda (divide por 100 para criar os decimais)
     if (valor) {
       valor = (Number(valor) / 100).toLocaleString("pt-BR", {
         minimumFractionDigits: 2,
@@ -53,13 +47,13 @@ const handleSubmit = (e) => {
       });
     }
 
-    // Atualiza o estado (adapte "formData" para o nome do seu estado atual)
     setFormData({ ...formData, valorEstimado: valor });
   };
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl w-full max-w-lg p-6 space-y-5 shadow-2xl">
+      {/* Ajuste de padding para mobile */}
+      <div className="bg-white rounded-2xl w-full max-w-lg p-4 sm:p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
         <h2 className="text-lg font-bold text-slate-800">Nova Solicitação de Compra</h2>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -87,7 +81,7 @@ const handleSubmit = (e) => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">Categoria *</label>
               <select
@@ -108,8 +102,8 @@ const handleSubmit = (e) => {
               <select
                 required
                 name="departamento"
-                value={formData.departamento} /* Ajuste caso sua variável de estado tenha outro nome */
-                onChange={(e) => setFormData({ ...formData, departamento: e.target.value })} /* Ajuste a função de mudança conforme seu arquivo */
+                value={formData.departamento} 
+                onChange={(e) => setFormData({ ...formData, departamento: e.target.value })} 
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="" disabled>Selecione um departamento...</option>
@@ -123,7 +117,7 @@ const handleSubmit = (e) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">Prioridade *</label>
               <select
@@ -153,11 +147,12 @@ const handleSubmit = (e) => {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+          {/* Botões ajustados para quebrarem de linha de forma elegante no celular */}
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-3 border-t border-slate-100">
+            <button type="button" onClick={onClose} className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors order-2 sm:order-1">
               Cancelar
             </button>
-            <button type="submit" className="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm">
+            <button type="submit" className="w-full sm:w-auto px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm order-1 sm:order-2">
               Criar Solicitação
             </button>
           </div>

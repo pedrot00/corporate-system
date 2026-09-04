@@ -15,10 +15,8 @@ export default function Solicitacoes({ apenasMinhas = false }) {
   const [modalNovaAberto, setModalNovaAberto] = useState(false);
   const [itemDetalhes, setItemDetalhes] = useState(null);
 
-  // VERIFICA SE O USUÁRIO É ADMIN
   const isAdmin = usuario?.papel === 'ADMIN' || usuario?.perfil === 'ADMIN';
 
-  // BUSCA OS DADOS DA API
   const carregarSolicitacoes = async () => {
     try {
       const response = await api.get('/solicitacoes');
@@ -52,7 +50,7 @@ export default function Solicitacoes({ apenasMinhas = false }) {
   const handleTransicionarEstado = async (id, novoEstado, observacao = '') => {
     try {
       await api.put(`/solicitacoes/${id}`, { estado: novoEstado, observacao });
-      carregarSolicitacoes(); // Recarrega a lista após atualizar
+      carregarSolicitacoes(); 
     } catch (error) {
       alert(error.response?.data?.error || 'Erro ao atualizar estado.');
     }
@@ -61,18 +59,17 @@ export default function Solicitacoes({ apenasMinhas = false }) {
   const handleCriarSolicitacao = async (dadosNovos) => {
     try {
       await api.post('/solicitacoes', dadosNovos);
-      carregarSolicitacoes(); // Recarrega a lista após criar
+      carregarSolicitacoes(); 
     } catch (error) {
       alert(error.response?.data?.error || 'Erro ao criar solicitação.');
     }
   };
 
-  // FUNÇÃO PARA DELETAR A SOLICITAÇÃO
   const handleDeletarSolicitacao = async (id) => {
     if (!window.confirm('Tem certeza que deseja excluir esta solicitação permanentemente?')) return;
     try {
       await api.delete(`/solicitacoes/${id}`);
-      carregarSolicitacoes(); // Recarrega a lista após deletar
+      carregarSolicitacoes(); 
     } catch (error) {
       alert(error.response?.data?.error || 'Erro ao excluir solicitação.');
     }
@@ -80,7 +77,6 @@ export default function Solicitacoes({ apenasMinhas = false }) {
 
   const abrirDetalhes = async (id) => {
     try {
-      // Busca a solicitação com o histórico completo aninhado
       const response = await api.get(`/solicitacoes/${id}`);
       setItemDetalhes(response.data);
     } catch (error) {
@@ -93,13 +89,11 @@ export default function Solicitacoes({ apenasMinhas = false }) {
       return alert('Não há dados para exportar.');
     }
     
-    // Criação do cabeçalho
     const cabecalho = ['ID', 'Titulo', 'Prioridade', 'Categoria', 'Solicitante', 'Departamento', 'Valor Estimado', 'Estado'];
     
-    // Mapeamento dos dados em tela para linhas do CSV
     const linhas = chamadosFiltrados.map(item => [
       item.id,
-      `"${item.titulo}"`, // Aspas evitam quebra caso o texto tenha vírgulas
+      `"${item.titulo}"`, 
       item.prioridade,
       `"${item.categoria}"`,
       `"${item.solicitante?.nome || 'Desconhecido'}"`,
@@ -108,10 +102,8 @@ export default function Solicitacoes({ apenasMinhas = false }) {
       item.estado
     ]);
 
-    // Montagem do arquivo separando colunas por ponto e vírgula
     const csvContent = "\uFEFF" + [cabecalho.join(';'), ...linhas.map(l => l.join(';'))].join('\n');
     
-    // Download do arquivo
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -122,7 +114,8 @@ export default function Solicitacoes({ apenasMinhas = false }) {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+      
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">
@@ -133,13 +126,13 @@ export default function Solicitacoes({ apenasMinhas = false }) {
           </p>
         </div>
 
-        <div className="flex items-center gap-3 self-start md:self-auto">
-          <div className="bg-slate-100 border border-slate-200 text-slate-700 text-sm font-semibold px-4 py-2.5 rounded-lg flex items-center shadow-sm">
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          <div className="w-full sm:w-auto bg-slate-100 border border-slate-200 text-slate-700 text-sm font-semibold px-4 py-2.5 rounded-lg flex items-center justify-center shadow-sm">
             Total: {chamadosFiltrados.length}
           </div>
           <button
             onClick={handleExportarCSV}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm"
+            className="w-full sm:w-auto justify-center bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm"
           >
             <FileSpreadsheet size={18} />
             Exportar CSV
@@ -147,7 +140,7 @@ export default function Solicitacoes({ apenasMinhas = false }) {
 
           <button
             onClick={() => setModalNovaAberto(true)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm"
+            className="w-full sm:w-auto justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm"
           >
             <Plus size={18} />
             Nova Solicitação
@@ -155,28 +148,28 @@ export default function Solicitacoes({ apenasMinhas = false }) {
         </div>
       </div>
 
-      {/* FILTROS */}
-      <div className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+      {/* FILTROS RESPONSIVOS */}
+      <div className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
         <div className="relative w-full md:w-96">
           <Search className="absolute left-3 top-2.5 text-black" size={18} />
           <input
             type="text"
-            placeholder="Buscar por título, departamento ou solicitante..."
+            placeholder="Buscar por título, depto..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-black rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring--500"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <Filter size={16} className="text-black shrink-0" />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">
+          <Filter size={16} className="text-black shrink-0 hidden sm:block" />
           
           <select
             value={estadoFiltro}
             onChange={(e) => setEstadoFiltro(e.target.value)}
-            className="bg-slate-50 border border-black text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="w-full sm:w-auto bg-slate-50 border border-black text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
           >
-            <option value="TODOS">Filtrar por Estados</option>
+            <option value="TODOS">Estados (Todos)</option>
             <option value="PENDENTE">PENDENTE</option>
             <option value="SOLICITACAO_REENVIADA">SOLICITACAO_REENVIADA</option>
             <option value="APROVADA">APROVADA</option>
@@ -188,9 +181,9 @@ export default function Solicitacoes({ apenasMinhas = false }) {
           <select
             value={departamentoFiltro}
             onChange={(e) => setDepartamentoFiltro(e.target.value)}
-            className="bg-slate-50 border border-black text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="w-full sm:w-auto bg-slate-50 border border-black text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
           >
-            <option value="TODOS">Filtrar por Deptos</option>
+            <option value="TODOS">Deptos (Todos)</option>
             <option value="RH">RH</option>
             <option value="TI">TI</option>
             <option value="Financeiro">Financeiro</option>
@@ -201,9 +194,9 @@ export default function Solicitacoes({ apenasMinhas = false }) {
           <select
             value={prioridadeFiltro}
             onChange={(e) => setPrioridadeFiltro(e.target.value)}
-            className="bg-slate-50 border border-black text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="w-full sm:w-auto bg-slate-50 border border-black text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
           >
-            <option value="TODOS">Filtrar por Prioridades</option>
+            <option value="TODOS">Prioridade (Todas)</option>
             <option value="ALTA">Alta</option>
             <option value="MEDIA">Média</option>
             <option value="BAIXA">Baixa</option>
@@ -211,78 +204,92 @@ export default function Solicitacoes({ apenasMinhas = false }) {
         </div>
       </div>
 
-      {/* TABELA */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full text-left text-sm text-slate-600">
-          <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-500 border-b border-slate-200">
-            <tr>
-              <th className="p-4">Item / Prioridade</th>
-              <th className="p-4">Solicitante</th>
-              <th className="p-4">Valor Est.</th>
-              <th className="p-4">Estado</th>
-              <th className="p-4 text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {chamadosFiltrados.map((item) => (
-              <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="p-4">
-                  <div className="font-semibold text-slate-800 flex items-center gap-2">
-                    {item.titulo}
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                      item.prioridade === 'ALTA' ? 'bg-rose-100 text-rose-700' :
-                      item.prioridade === 'MEDIA' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'
-                    }`}>
-                      {item.prioridade}
-                    </span>
-                  </div>
-                  <div className="text-xs text-slate-400">{item.categoria}</div>
-                </td>
-                <td className="p-4">
-                  <div className="font-medium text-slate-700">{item.solicitante?.nome || 'Desconhecido'}</div>
-                  <div className="text-xs text-slate-400">{item.departamento}</div>
-                </td>
-                <td className="p-4 font-bold text-slate-800">
-                  R$ {Number(item.valorEstimado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </td>
-                <td className="p-4">
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                    item.estado === 'APROVADA' ? 'bg-emerald-100 text-emerald-800' :
-                    item.estado === 'REJEITADA' ? 'bg-rose-100 text-rose-800' :
-                    item.estado === 'EM_COMPRA' ? 'bg-blue-100 text-blue-800' :
-                    item.estado === 'FINALIZADA' ? 'bg-purple-100 text-purple-800' : 'bg-amber-100 text-amber-800'
-                  }`}>
-                    {item.estado === 'APROVADA' && <CheckCircle size={12} />}
-                    {item.estado === 'REJEITADA' && <XCircle size={12} />}
-                    {['PENDENTE', 'SOLICITACAO_REENVIADA'].includes(item.estado) && <Clock size={12} />}
-                    {item.estado === 'EM_COMPRA' && <ShoppingCart size={12} />}
-                    {item.estado === 'FINALIZADA' && <CheckCheck size={12} />}
-                    {item.estado}
-                  </span>
-                </td>
-                <td className="p-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      onClick={() => abrirDetalhes(item.id)}
-                      className="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors inline-flex items-center gap-1"
-                    >
-                      <Eye size={14} /> Detalhes
-                    </button>
-                    {isAdmin && (
-                      <button
-                        onClick={() => handleDeletarSolicitacao(item.id)}
-                        className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition-colors"
-                        title="Excluir Solicitação"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
-                  </div>
-                </td>
+      {/* TABELA COM SCROLL HORIZONTAL NO MOBILE */}
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
+        <div className="p-2 bg-slate-50 border-b border-slate-200 flex justify-end md:hidden">
+          <span className="text-[10px] text-slate-500 bg-slate-200 px-2 py-1 rounded">Deslize ↔</span>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm text-slate-600 min-w-[700px]">
+            <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-500 border-b border-slate-200">
+              <tr>
+                <th className="p-4">Item / Prioridade</th>
+                <th className="p-4">Solicitante</th>
+                <th className="p-4">Valor Est.</th>
+                <th className="p-4">Estado</th>
+                <th className="p-4 text-right">Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {chamadosFiltrados.map((item) => (
+                <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="p-4">
+                    <div className="font-semibold text-slate-800 flex items-center gap-2">
+                      <span className="truncate max-w-[200px]" title={item.titulo}>{item.titulo}</span>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                        item.prioridade === 'ALTA' ? 'bg-rose-100 text-rose-700' :
+                        item.prioridade === 'MEDIA' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'
+                      }`}>
+                        {item.prioridade}
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-400">{item.categoria}</div>
+                  </td>
+                  <td className="p-4">
+                    <div className="font-medium text-slate-700">{item.solicitante?.nome || 'Desconhecido'}</div>
+                    <div className="text-xs text-slate-400">{item.departamento}</div>
+                  </td>
+                  <td className="p-4 font-bold text-slate-800 whitespace-nowrap">
+                    R$ {Number(item.valorEstimado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </td>
+                  <td className="p-4">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
+                      item.estado === 'APROVADA' ? 'bg-emerald-100 text-emerald-800' :
+                      item.estado === 'REJEITADA' ? 'bg-rose-100 text-rose-800' :
+                      item.estado === 'EM_COMPRA' ? 'bg-blue-100 text-blue-800' :
+                      item.estado === 'FINALIZADA' ? 'bg-purple-100 text-purple-800' : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {item.estado === 'APROVADA' && <CheckCircle size={12} />}
+                      {item.estado === 'REJEITADA' && <XCircle size={12} />}
+                      {['PENDENTE', 'SOLICITACAO_REENVIADA'].includes(item.estado) && <Clock size={12} />}
+                      {item.estado === 'EM_COMPRA' && <ShoppingCart size={12} />}
+                      {item.estado === 'FINALIZADA' && <CheckCheck size={12} />}
+                      {item.estado}
+                    </span>
+                  </td>
+                  <td className="p-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => abrirDetalhes(item.id)}
+                        className="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors inline-flex items-center gap-1"
+                      >
+                        <Eye size={14} /> Detalhes
+                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() => handleDeletarSolicitacao(item.id)}
+                          className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition-colors"
+                          title="Excluir Solicitação"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              
+              {chamadosFiltrados.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="p-8 text-center text-slate-500">
+                    Nenhuma solicitação encontrada com os filtros atuais.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <NovaSolicitacaoModal
