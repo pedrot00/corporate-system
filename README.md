@@ -169,6 +169,6 @@ Este projeto está sob a licença MIT. Consulte o arquivo [LICENSE](./LICENSE) p
 
 ## 👤 Autor
 
-**Pedro T.** — [GitHub](https://github.com/pedrot00)
+**Pedro S. Teixeira** — [GitHub](https://github.com/pedrot00)
 
 Se este projeto te ajudou de alguma forma, considere deixar uma ⭐ no repositório!
