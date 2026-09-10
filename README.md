@@ -9,7 +9,7 @@
 
 Plataforma full-stack para automação e controle de fluxo de solicitações de compras corporativas. O sistema substitui processos manuais por um fluxo auditável de aprovações com métricas em tempo real, controle de acesso baseado em papéis (RBAC) e interface adaptável a qualquer dispositivo.
 
-🚀 **[Clique aqui para acessar o Live Demo em Produção](https://corporate-system-frontend.vercel.app/login)**
+🚀 **[Clique aqui para acessar o sistema em Produção](https://corporate-system-frontend.vercel.app/login)**
 
 ---
 
@@ -22,7 +22,7 @@ Exibição de KPIs operacionais, volume por departamento, solicitações por pri
 
 | Desktop | Mobile |
 | :---: | :---: |
-| ![Dashboard Desktop](./docs/dashboard-desktop.png) | ![Dashboard Mobile](./docs/dashboard-mobile.png) |
+| ![Dashboard Desktop](/frontend/public/dashboard_desktop.PNG) | ![Dashboard Mobile](./docs/dashboard-mobile.png) |
 
 ### 2. Fluxo e Aprovações de Solicitações
 Tabela dinâmica com filtros avançados, suporte a busca em tempo real e visualização em cards responsivos em telas menores.
