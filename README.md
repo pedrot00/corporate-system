@@ -22,7 +22,7 @@ Exibição de KPIs operacionais, volume por departamento, solicitações por pri
 
 | Desktop | Mobile |
 | :---: | :---: |
-| ![Dashboard Desktop](/frontend/public/dashboard_desktop.PNG) | ![Dashboard Mobile](./docs/dashboard-mobile.png) |
+| ![Dashboard Desktop](./frontend/public/dashboard_desktop.PNG) | ![Dashboard Mobile](./frontend/public/dashboard_mobile.PNG) |
 
 ### 2. Fluxo e Aprovações de Solicitações
 Tabela dinâmica com filtros avançados, suporte a busca em tempo real e visualização em cards responsivos em telas menores.
