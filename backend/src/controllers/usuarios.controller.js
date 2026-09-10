@@ -55,7 +55,10 @@ class UsuariosController {
   async deletar(req, res) {
     try {
       const reqId = req.params.id;
-      await usuariosService.deletar(reqId);
+      const adminId = req.usuarioId || req.usuario?.id || req.user?.id || req.body.adminId;
+      const senhaAdmin = req.body.senhaAdmin;
+
+      await usuariosService.deletar(reqId, adminId, senhaAdmin);
       return res.status(204).send();
     } catch (error) {
       return res.status(400).json({ erro: error.message });

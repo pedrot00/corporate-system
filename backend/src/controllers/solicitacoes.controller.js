@@ -44,7 +44,6 @@ class SolicitacoesController {
     }
   }
 
-  // Alias para manter compatibilidade com rotas que usam .atualizar
   async atualizar(req, res) {
     return this.alterar(req, res);
   }

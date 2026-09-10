@@ -152,8 +152,32 @@ class UsuariosService {
     });
   }
 
-  async deletar(reqId) {
+  // EXCLUSÃO COM VALIDAÇÃO DE AUTOEXCLUSÃO E SENHA
+  async deletar(reqId, adminId, senhaAdmin) {
     const idNumber = Number(reqId);
+    const adminIdNumber = Number(adminId);
+
+    if (idNumber === adminIdNumber) {
+      throw new Error("Você não pode excluir a sua própria conta de Administrador.");
+    }
+
+    if (!senhaAdmin) {
+      throw new Error("Informe sua senha de administrador para confirmar a exclusão.");
+    }
+
+    const admin = await prisma.usuario.findUnique({
+      where: { id: adminIdNumber }
+    });
+
+    if (!admin) {
+      throw new Error("Administrador não autenticado.");
+    }
+
+    const senhaValida = await bcrypt.compare(senhaAdmin, admin.senha);
+    if (!senhaValida) {
+      throw new Error("Senha de confirmação incorreta.");
+    }
+
     await this.listarPorId(idNumber);
 
     return await prisma.usuario.delete({

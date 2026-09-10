@@ -79,7 +79,7 @@ class SolicitacoesService {
           select: { id: true, nome: true, email: true, departamento: true }
         }
       },
-      orderBy: { criadoEm: 'desc' }
+      orderBy: { atualizadoEm: 'desc' }
     });
   }
 

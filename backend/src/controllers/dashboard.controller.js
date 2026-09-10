@@ -7,7 +7,6 @@ class DashboardController {
         try {   
             const { dataInicio, dataFinal, departamento } = req.query;
 
-            // <-- Adicionado await
             const informacoes = await dashboardService.listarInformacoes({
                 dataInicio,
                 dataFinal,

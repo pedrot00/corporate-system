@@ -5,7 +5,6 @@ import { Router } from "express";
 const router = Router();
 const solicitacoesController = new SolicitacoesController();
 
-// Aplica autenticação em todas as rotas abaixo
 router.use(autenticarToken);
 
 router.post("/", (req, res) => solicitacoesController.criar(req, res));
