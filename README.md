@@ -13,7 +13,7 @@ Plataforma full-stack para automação e controle de fluxo de solicitações de 
 
 🚀 **[Clique aqui para acessar e testar o sistema em Produção](https://corporate-system-frontend.vercel.app/login)**
 
-** Basta, ao acessar a página de login, clicar em Funcionário ou Gestor ou Admin! **
+**Basta, ao acessar a página de login, clicar em Funcionário ou Gestor ou Admin!**
 
 ---
 
